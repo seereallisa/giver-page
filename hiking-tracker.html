@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>민낯여성산악회 — 자율산행 기록 조회</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green-dark: #1e3a1e;
+  --green-mid: #2d5a27;
+  --green-light: #4a8a3f;
+  --green-pale: #eaf4e8;
+  --cream: #f9f6f0;
+  --brown: #6b4c2a;
+  --gold: #c9963a;
+  --text: #1a1a1a;
+  --muted: #7a7a7a;
+  --white: #ffffff;
+  --shadow: 0 4px 24px rgba(30,58,30,0.12);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--cream);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+header {
+  background: var(--green-dark);
+  color: var(--white);
+  padding: 1.2rem 1.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+header::before {
+  content: '🌿';
+  position: absolute;
+  font-size: 6rem;
+  opacity: 0.06;
+  top: -1rem;
+  left: -1rem;
+}
+header::after {
+  content: '🏔️';
+  position: absolute;
+  font-size: 5rem;
+  opacity: 0.06;
+  bottom: -1rem;
+  right: -0.5rem;
+}
+.header-sub {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+}
+header h1 {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 0.05em;
+  color: var(--white);
+}
+.header-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  background: var(--gold);
+  color: var(--white);
+  font-size: 0.65rem;
+  padding: 0.2em 0.8em;
+  border-radius: 20px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+/* MAIN */
+main {
+  flex: 1;
+  padding: 1.5rem 1rem 3rem;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  background: var(--white);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.tab-btn {
+  flex: 1;
+  padding: 0.6rem;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--green-mid);
+  color: var(--white);
+  font-weight: 700;
+}
+
+/* CARD */
+.card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--green-mid);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+/* FORM */
+.field { margin-bottom: 1rem; }
+.field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+.field label span {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.7rem;
+}
+.field input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.88rem;
+  color: var(--text);
+  background: var(--cream);
+  transition: border-color 0.2s;
+  outline: none;
+}
+.field input:focus {
+  border-color: var(--green-light);
+  background: var(--white);
+}
+.field input::placeholder { color: #bbb; }
+
+.btn {
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+.btn-primary {
+  background: var(--green-mid);
+  color: var(--white);
+}
+.btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-secondary {
+  background: var(--cream);
+  color: var(--green-mid);
+  border: 1.5px solid var(--green-mid);
+  margin-top: 0.5rem;
+}
+
+/* RESULT */
+.result-box {
+  text-align: center;
+  padding: 1rem 0;
+}
+.result-name {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+.result-count {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 3.5rem;
+  color: var(--green-mid);
+  line-height: 1;
+  margin-bottom: 0.2rem;
+}
+.result-unit {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.result-msg {
+  background: var(--green-pale);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-size: 0.82rem;
+  color: var(--green-dark);
+  font-weight: 500;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+/* PROGRESS BAR */
+.progress-section { margin-bottom: 1rem; }
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.progress-bar {
+  height: 10px;
+  background: #e8e8e8;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green-light), var(--green-mid));
+  border-radius: 10px;
+  transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* MILESTONE */
+.milestones {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.milestone {
+  text-align: center;
+  padding: 0.6rem 0.3rem;
+  border-radius: 10px;
+  border: 1.5px solid #e0e0e0;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.milestone.done {
+  background: var(--green-pale);
+  border-color: var(--green-light);
+  color: var(--green-dark);
+}
+.milestone.next {
+  border-color: var(--gold);
+  color: var(--brown);
+  background: #fdf8ef;
+}
+.milestone-count { font-size: 1rem; font-weight: 700; display: block; margin-bottom: 0.2rem; }
+.milestone.done .milestone-count { color: var(--green-mid); }
+.milestone.next .milestone-count { color: var(--gold); }
+
+/* HISTORY */
+.history-list { list-style: none; }
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.78rem;
+}
+.history-item:last-child { border-bottom: none; }
+.history-num {
+  width: 24px; height: 24px;
+  background: var(--green-mid);
+  color: var(--white);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.history-date { color: var(--muted); font-size: 0.7rem; white-space: nowrap; }
+.history-link { color: var(--green-mid); text-decoration: none; font-size: 0.72rem; }
+.history-link:hover { text-decoration: underline; }
+
+/* ADMIN */
+.admin-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+th {
+  background: var(--green-dark);
+  color: var(--white);
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+td {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+tr:hover td { background: var(--green-pale); }
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--white);
+}
+.rank-1 { background: #c9963a; }
+.rank-2 { background: #9a9a9a; }
+.rank-3 { background: #8b5e3c; }
+.rank-other { background: var(--green-light); }
+.count-badge {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+.count-high { background: var(--green-pale); color: var(--green-dark); }
+.count-mid  { background: #fff8e6; color: var(--brown); }
+.count-low  { background: #f5f5f5; color: var(--muted); }
+
+/* NOTICE */
+.notice {
+  background: #fff8e6;
+  border: 1px solid #f0d080;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-size: 0.74rem;
+  color: var(--brown);
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+.notice strong { color: var(--brown); }
+
+/* SECTION DIVIDER */
+.section-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 1.2rem 0 0.6rem;
+  font-weight: 700;
+}
+
+.hidden { display: none; }
+
+/* EMPTY STATE */
+.empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-sub">민낯여성산악회</div>
+  <h1>🏔 Giver 현황 페이지</h1>
+  <span class="header-badge">기버뱃지 캠페인</span>
+</header>
+
+<main>
+
+  <!-- ── 현황 페이지 ── -->
+  <div id="tab-admin">
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem">
+        <div class="card-title" style="margin-bottom:0">🏅 회원별 누적 산행 현황</div>
+        <button onclick="loadData()" style="font-size:0.7rem; padding:0.3em 0.8em; border-radius:8px; border:1px solid var(--green-mid); background:transparent; color:var(--green-mid); cursor:pointer; font-family:'Noto Sans KR',sans-serif;">🔄 새로고침</button>
+      </div>
+      <div class="admin-table-wrap">
+        <table id="admin-table">
+          <thead>
+            <tr>
+              <th>공지 누적 횟수</th>
+              <th>이름</th>
+              <th>전화 뒷자리</th>
+              <th>최근 산행일</th>
+            </tr>
+          </thead>
+          <tbody id="admin-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:0">
+      <div class="card-title">통계 요약</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; text-align:center; margin-bottom:1rem">
+        <div>
+          <div style="font-size:1.5rem; font-weight:700; color:var(--green-mid)" id="stat-total">0</div>
+          <div style="font-size:0.68rem; color:var(--muted)">총 등록 건수</div>
+        </div>
+        <div>
+          <div style="font-size:1.5rem; font-weight:700; color:var(--green-mid)" id="stat-members">0</div>
+          <div style="font-size:0.68rem; color:var(--muted)">참여 회원 수</div>
+        </div>
+      </div>
+      <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:0.6rem">🏅 달성 그룹별 인원</div>
+      <div id="group-stats" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0Yp8SGOupUWkVKmgv8pKOwyb0Low9kkDvGfHX7g4QAbRDuE0nWzcEiW9Kxa6cNMtuz2bljWUsYPOk/pub?gid=193820947&single=true&output=csv';
+
+const MILESTONES = [10, 20, 30, 50];
+
+function getCountClass(count) {
+  if (count >= 20) return 'count-high';
+  if (count >= 10) return 'count-mid';
+  return 'count-low';
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').slice(1); // 헤더 제거
+  return lines
+    .filter(line => line.trim() && line.split(',').length >= 4)
+    .map(line => {
+      // CSV 파싱 (쉼표+따옴표 처리)
+      const cols = [];
+      let cur = '', inQ = false;
+      for (let ch of line) {
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+        else { cur += ch; }
+      }
+      cols.push(cur.trim());
+      const raw = {
+        name:  cols[1]?.replace(/^"|"$/g,'').trim() || '',
+        phone: cols[2]?.replace(/^"|"$/g,'').trim() || '',
+        date:  cols[3]?.replace(/^"|"$/g,'').trim() || '',
+        link:  cols[4]?.replace(/^"|"$/g,'').trim() || '',
+      };
+      // 날짜 정규화: "2026. 4. 26" → "2026-04-26"
+      raw.date = raw.date.replace(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?/, (_, y, m, d) =>
+        `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
+      );
+      return raw;
+    })
+    .filter(r => r.name && r.phone);
+}
+
+function renderPage(DB) {
+  const summary = {};
+  DB.forEach(r => {
+    const key = r.name + '|' + r.phone;
+    if (!summary[key]) summary[key] = { name: r.name, phone: r.phone, records: [] };
+    summary[key].records.push(r);
+  });
+
+  const rows = Object.values(summary)
+    .map(m => ({
+      name: m.name,
+      phone: m.phone,
+      count: m.records.length,
+      lastDate: m.records.sort((a,b) => new Date(b.date) - new Date(a.date))[0].date
+    }))
+    .sort((a,b) => b.count - a.count);
+
+  const tbody = document.getElementById('admin-tbody');
+  tbody.innerHTML = rows.length === 0
+    ? `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:2rem">아직 등록된 산행이 없어요 🌿</td></tr>`
+    : rows.map(r => {
+        const cntCls = getCountClass(r.count);
+        return `<tr>
+          <td><span class="count-badge ${cntCls}">${r.count}회</span></td>
+          <td><strong>${r.name}</strong></td>
+          <td style="color:var(--muted); font-size:0.75rem">${r.phone}</td>
+          <td style="color:var(--muted)">${r.lastDate}</td>
+        </tr>`;
+      }).join('');
+
+  document.getElementById('stat-total').textContent   = DB.length;
+  document.getElementById('stat-members').textContent = rows.length;
+
+  const groups = [
+    { label:'10회 이상', min:10, max:19, color:'#2d5a27', bg:'#eaf4e8' },
+    { label:'20회 이상', min:20, max:29, color:'#c9963a', bg:'#fdf8ef' },
+    { label:'30회 이상', min:30, max:49, color:'#8b5e3c', bg:'#fdf3ec' },
+    { label:'50회 이상', min:50, max:Infinity, color:'#1a1a1a', bg:'#f5f5f5' },
+  ];
+  const under10 = rows.filter(r => r.count < 10).length;
+  document.getElementById('group-stats').innerHTML =
+    `<div style="background:#f5f5f5; border-radius:10px; padding:0.6rem; text-align:center; border:1.5px solid #e0e0e0">
+       <div style="font-size:1.2rem; font-weight:700; color:var(--muted)">${under10}명</div>
+       <div style="font-size:0.68rem; color:var(--muted)">10회 미만</div>
+     </div>` +
+    groups.map(g => {
+      const cnt = rows.filter(r => r.count >= g.min && r.count <= g.max).length;
+      return `<div style="background:${g.bg}; border-radius:10px; padding:0.6rem; text-align:center; border:1.5px solid ${g.color}33">
+        <div style="font-size:1.2rem; font-weight:700; color:${g.color}">${cnt}명</div>
+        <div style="font-size:0.68rem; color:${g.color}">${g.label}</div>
+      </div>`;
+    }).join('');
+}
+
+function showError(msg) {
+  document.getElementById('admin-tbody').innerHTML =
+    `<tr><td colspan="4" style="text-align:center; color:#e55; padding:2rem">${msg}</td></tr>`;
+}
+
+async function loadData() {
+  document.getElementById('admin-tbody').innerHTML =
+    `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:2rem">⏳ 데이터 불러오는 중...</td></tr>`;
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error('fetch 실패');
+    const text = await res.text();
+    console.log('CSV raw:', text.substring(0, 300));
+    const DB = parseCSV(text);
+    console.log('파싱된 데이터:', DB);
+    renderPage(DB);
+  } catch(e) {
+    console.error('에러:', e);
+    showError('데이터를 불러오지 못했어요. 시트 공유 설정을 확인해 주세요.<br><small>' + e.message + '</small>');
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
