@@ -443,32 +443,48 @@ function getCountClass(count) {
 }
 
 function parseCSV(text) {
-  const lines = text.trim().split('\n').slice(1); // 헤더 제거
-  return lines
-    .filter(line => line.trim() && line.split(',').length >= 4)
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  // 헤더 제거하고 데이터 행만
+  return lines.slice(1)
+    .filter(line => line.trim())
     .map(line => {
-      // CSV 파싱 (쉼표+따옴표 처리)
+      // CSV 따옴표 처리 파싱
       const cols = [];
       let cur = '', inQ = false;
-      for (let ch of line) {
-        if (ch === '"') { inQ = !inQ; }
-        else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-        else { cur += ch; }
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+          else { inQ = !inQ; }
+        } else if (ch === ',' && !inQ) {
+          cols.push(cur.trim());
+          cur = '';
+        } else {
+          cur += ch;
+        }
       }
       cols.push(cur.trim());
+
+      // 따옴표 제거
+      const clean = cols.map(c => c.replace(/^"|"$/g, '').trim());
+
       const raw = {
-        name:  cols[1]?.replace(/^"|"$/g,'').trim() || '',
-        phone: cols[2]?.replace(/^"|"$/g,'').trim() || '',
-        date:  cols[3]?.replace(/^"|"$/g,'').trim() || '',
-        link:  cols[4]?.replace(/^"|"$/g,'').trim() || '',
+        name:  clean[1] || '',
+        phone: String(clean[2] || ''),
+        date:  clean[3] || '',
+        link:  clean[4] || '',
       };
-      // 날짜 정규화: "2026. 4. 26" → "2026-04-26"
-      raw.date = raw.date.replace(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?/, (_, y, m, d) =>
+
+      // 날짜 정규화: "2026. 4. 26" or "2026.4.26" → "2026-04-26"
+      raw.date = raw.date.replace(/(\d{4})[.\s]+(\d{1,2})[.\s]+(\d{1,2})/, (_, y, m, d) =>
         `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
       );
+
       return raw;
     })
-    .filter(r => r.name && r.phone);
+    .filter(r => r.name); // 이름만 있으면 통과
 }
 
 function renderPage(DB) {
