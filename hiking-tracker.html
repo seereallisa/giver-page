@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>민낯여성산악회 — 자율산행 기록 조회</title>
+<title>민낯여성산악회 — Giver 명예의 전당</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Black+Han+Sans&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -57,21 +57,22 @@ header::after {
   right: -0.5rem;
 }
 .header-sub {
-  font-size: 0.68rem;
-  letter-spacing: 0.2em;
-  color: rgba(255,255,255,0.5);
-  margin-bottom: 0.3rem;
-  text-transform: uppercase;
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 header h1 {
   font-family: 'Black Han Sans', sans-serif;
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   letter-spacing: 0.05em;
   color: var(--white);
+  margin-bottom: 0.4rem;
 }
 .header-badge {
   display: inline-block;
-  margin-top: 0.5rem;
+  margin-top: 0.3rem;
   background: var(--gold);
   color: var(--white);
   font-size: 0.65rem;
@@ -79,6 +80,65 @@ header h1 {
   border-radius: 20px;
   letter-spacing: 0.1em;
   font-weight: 700;
+}
+.badge-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.6rem 0;
+}
+.badge-img {
+  height: 48px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+}
+.gift-card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin: 0.8rem auto 0;
+  max-width: 420px;
+  text-align: left;
+}
+.gift-title {
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.6rem;
+}
+.gift-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+.gift-list li {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.85);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  line-height: 1.5;
+}
+.gift-count {
+  background: var(--gold);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+.period-notice {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.5);
+  text-align: center;
+  margin-top: 0.6rem;
 }
 
 /* MAIN */
@@ -385,8 +445,20 @@ tr:hover td { background: var(--green-pale); }
 
 <header>
   <div class="header-sub">민낯여성산악회</div>
-  <h1>🏔 Giver 현황 페이지</h1>
-  <span class="header-badge">기버뱃지 캠페인</span>
+  <h1>Giver 명예의 전당</h1>
+  <div class="badge-row">
+    <img class="badge-img" src="https://seereallisa.github.io/giver-page/giver.jpg" alt="10 Giver 뱃지">
+  </div>
+  <div class="gift-card">
+    <div class="gift-title">🎁 연말 감사 선물</div>
+    <ul class="gift-list">
+      <li><span class="gift-count">10회</span>크로스백<br><small style="color:rgba(255,255,255,0.5)">10만원 상당</small></li>
+      <li><span class="gift-count">20회</span>등산 배낭<br><small style="color:rgba(255,255,255,0.5)">20만원 상당</small></li>
+      <li><span class="gift-count">30회</span>블랙다이아몬드 Z스틱<br><small style="color:rgba(255,255,255,0.5)">30만원 상당</small></li>
+      <li><span class="gift-count">40회</span>아웃쉘 자켓<br><small style="color:rgba(255,255,255,0.5)">40만원 상당</small></li>
+    </ul>
+    <div class="period-notice">📅 집계는 11월 30일 기준으로 리셋되며,<br>선물과 뱃지는 송년 감사 파티를 통해 전달됩니다</div>
+  </div>
 </header>
 
 <main>
@@ -395,14 +467,14 @@ tr:hover td { background: var(--green-pale); }
   <div id="tab-admin">
     <div class="card">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem">
-        <div class="card-title" style="margin-bottom:0">🏅 회원별 누적 산행 현황</div>
+        <div class="card-title" style="margin-bottom:0">🏅 회원별 누적 현황</div>
         <button onclick="loadData()" style="font-size:0.7rem; padding:0.3em 0.8em; border-radius:8px; border:1px solid var(--green-mid); background:transparent; color:var(--green-mid); cursor:pointer; font-family:'Noto Sans KR',sans-serif;">🔄 새로고침</button>
       </div>
       <div class="admin-table-wrap">
         <table id="admin-table">
           <thead>
             <tr>
-              <th>공지 누적 횟수</th>
+              <th>공지 횟수</th>
               <th>이름</th>
               <th>전화 뒷자리</th>
               <th>최근 산행일</th>
@@ -426,6 +498,15 @@ tr:hover td { background: var(--green-pale); }
       </div>
       <div style="font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:0.6rem">🏅 달성 그룹별 인원</div>
       <div id="group-stats" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem"></div>
+    </div>
+
+    <!-- 집계 기간 & 운영자 리셋 -->
+    <div class="card" style="margin-top:0; text-align:center">
+      <div id="period-display" style="font-size:0.75rem; color:var(--muted); margin-bottom:0.8rem"></div>
+      <button onclick="confirmReset()" style="font-size:0.7rem; padding:0.4em 1em; border-radius:8px; border:1.5px solid #e55; background:transparent; color:#e55; cursor:pointer; font-family:'Noto Sans KR',sans-serif;">
+        🔄 연간 집계 수동 리셋 (운영자용)
+      </button>
+      <div style="font-size:0.62rem; color:var(--muted); margin-top:0.4rem">매년 12월 1일 이후 새 집계 시작 시 사용</div>
     </div>
   </div>
 
@@ -564,6 +645,36 @@ async function loadData() {
 }
 
 loadData();
+
+// 집계 기간 표시
+function updatePeriodDisplay() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const stored = localStorage.getItem('giver_reset_year');
+  const activeYear = stored ? parseInt(stored) : year;
+  const el = document.getElementById('period-display');
+  if (el) {
+    el.innerHTML = `⚠️ <strong> 아래버튼은 운영진 외 클릭 금지!</strong>`;
+  }
+}
+
+function confirmReset() {
+  const year = new Date().getFullYear();
+  const ok = confirm(
+    `⚠️ 연간 집계 리셋\n\n` +
+    `${year}년 새 집계를 시작하시겠어요?\n\n` +
+    `• 구글 시트의 이전 데이터를 직접 삭제/이동해 주세요\n` +
+    `• 이 버튼은 화면 기간 표시만 업데이트합니다\n\n` +
+    `계속하시겠어요?`
+  );
+  if (ok) {
+    localStorage.setItem('giver_reset_year', year);
+    updatePeriodDisplay();
+    alert(`✅ ${year}년 집계 기간으로 설정되었습니다!\n\n구글 시트에서 이전 데이터도 정리해 주세요.`);
+  }
+}
+
+updatePeriodDisplay();
 </script>
 </body>
 </html>
