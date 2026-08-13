@@ -1,0 +1,1427 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>메이트 용역비 정산서 자동 변환 · 민낯여성산악회</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg: #F6F3EA;
+    --paper: #FFFFFF;
+    --ink: #22301D;
+    --ink-soft: #5B6555;
+    --forest: #3A5A40;
+    --forest-deep: #22331F;
+    --line: #DDD6C4;
+    --gold: #C79A3E;
+    --gold-soft: #F4EBD3;
+    --danger: #B0402C;
+    --radius: 10px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 8% 0%, rgba(58,90,64,0.06), transparent 40%),
+      radial-gradient(circle at 100% 30%, rgba(199,154,62,0.08), transparent 45%);
+    color: var(--ink);
+    font-family: 'Noto Sans KR', sans-serif;
+    line-height:1.55;
+    min-height:100vh;
+  }
+  .wrap{ max-width: 880px; margin:0 auto; padding: 40px 20px 90px; }
+
+  /* ── 헤더 ───────────────────────────────── */
+  header.hero{ margin-bottom: 34px; }
+  .eyebrow{
+    display:flex; align-items:center; gap:8px;
+    font-size:12.5px; letter-spacing:.14em; color: var(--forest);
+    font-weight:700; text-transform:uppercase; margin-bottom:10px;
+  }
+  .eyebrow svg{ width:16px; height:16px; }
+  h1{
+    font-family:'Noto Serif KR', serif;
+    font-weight:700;
+    font-size: clamp(24px, 4vw, 32px);
+    margin: 0 0 10px;
+    color: var(--forest-deep);
+  }
+  header.hero p{ color: var(--ink-soft); margin:0; font-size:14.5px; max-width: 60ch; }
+
+  /* ── 트레일 스텝 표시 ───────────────────── */
+  .trail{
+    display:flex; align-items:center; gap:0; margin: 30px 0 26px;
+  }
+  .trail .node{
+    display:flex; align-items:center; gap:8px; flex-shrink:0;
+  }
+  .trail .dot{
+    width:26px; height:26px; border-radius:50%;
+    background: var(--paper); border:2px solid var(--forest);
+    color:var(--forest); font-weight:700; font-size:12.5px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .trail .dot.done{ background:var(--forest); color:#fff; }
+  .trail .label{ font-size:13px; font-weight:700; color:var(--forest-deep); white-space:nowrap; }
+  .trail .label.muted{ color:var(--ink-soft); font-weight:500; }
+  .trail .path{
+    flex:1; height:0; border-top: 2px dashed var(--line); margin: 0 10px;
+    min-width: 18px;
+  }
+
+  /* ── 카드 ───────────────────────────────── */
+  .card{
+    background: var(--paper);
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 26px 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 1px 2px rgba(34,48,29,0.04);
+  }
+  .card h2{
+    font-family:'Noto Serif KR', serif;
+    font-size:17px; margin:0 0 4px; color: var(--forest-deep);
+    display:flex; align-items:center; gap:8px;
+  }
+  .card h2 .num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:50%; background:var(--gold-soft);
+    color:#8a6a1f; font-size:12px; font-weight:700;
+  }
+  .card .desc{ color:var(--ink-soft); font-size:13px; margin: 0 0 18px; }
+
+  /* ── 업로드 영역 ────────────────────────── */
+  .dropzone{
+    border: 1.5px dashed var(--line);
+    border-radius: 8px;
+    padding: 28px 18px;
+    text-align:center;
+    cursor:pointer;
+    transition: border-color .15s, background .15s;
+    background: #FBFAF5;
+  }
+  .dropzone:hover, .dropzone.drag{ border-color: var(--forest); background:#F3F6F0; }
+  .dropzone svg{ width:30px; height:30px; color:var(--forest); margin-bottom:8px; }
+  .dropzone .main{ font-weight:700; font-size:14px; color:var(--forest-deep); }
+  .dropzone .sub{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
+  input[type=file]{ display:none; }
+
+  .file-chip{
+    display:flex; align-items:center; gap:10px;
+    background:#F3F6F0; border:1px solid #D7E3D3; border-radius:8px;
+    padding:10px 14px; font-size:13px; margin-top:14px;
+  }
+  .file-chip svg{ width:18px; height:18px; color:var(--forest); flex-shrink:0; }
+  .file-chip .name{ font-weight:700; color:var(--forest-deep); }
+  .file-chip .meta{ color:var(--ink-soft); }
+  .file-chip button{
+    margin-left:auto; border:none; background:none; color:var(--ink-soft);
+    cursor:pointer; font-size:12px; text-decoration:underline;
+  }
+
+  .status-line{ font-size:13px; margin-top:12px; color:var(--ink-soft); }
+  .status-line.err{ color:var(--danger); font-weight:700; }
+  .status-line.ok{ color:var(--forest); font-weight:700; }
+
+  /* ── 폼 ─────────────────────────────────── */
+  .grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap: 14px 18px; }
+  .grid.g4{ grid-template-columns: repeat(4, 1fr); }
+  .grid.g3{ grid-template-columns: repeat(3, 1fr); }
+  @media (max-width:640px){ .grid, .grid.g4, .grid.g3{ grid-template-columns: 1fr 1fr; } }
+  .field label{
+    display:block; font-size:12px; font-weight:700; color: var(--forest-deep);
+    margin-bottom:5px;
+  }
+  .field .hint{ font-size:11px; color:var(--ink-soft); font-weight:400; margin-left:4px; }
+  .field input[type=text], .field input[type=number], .field input[type=date]{
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:6px;
+    font-size:13.5px; font-family:inherit; color:var(--ink); background:#FEFEFC;
+  }
+  .field input:focus{ outline:2px solid var(--forest); outline-offset:1px; border-color:var(--forest); }
+  .checkline{
+    display:flex; align-items:center; gap:8px; font-size:13px; margin-top:16px;
+    color: var(--ink);
+  }
+  .checkline input{ width:16px; height:16px; accent-color: var(--forest); }
+
+  /* ── 메이트별 지급비율 표 ───────────────────── */
+  .mate-ratio-row{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 10px; border:1px solid var(--line); border-radius:6px;
+    background:#FEFEFC; margin-bottom:6px;
+  }
+  .mate-ratio-row .name{ flex:1; font-size:13.5px; font-weight:700; color:var(--forest-deep); }
+  .mate-ratio-row input{
+    width:70px; padding:6px 8px; border:1px solid var(--line); border-radius:5px;
+    font-size:13px; text-align:right; font-family:inherit;
+  }
+  .mate-ratio-row .pct{ font-size:13px; color:var(--ink-soft); }
+  .mate-ratio-row .tag{
+    font-size:10.5px; font-weight:700; padding:3px 7px; border-radius:20px;
+    white-space:nowrap;
+  }
+  .mate-ratio-row .tag.matched{ background:#E7F0E5; color:var(--forest); }
+  .mate-ratio-row .tag.missing{ background:#FBF1EE; color:#8a3a25; }
+
+  /* ── 미리보기 표 ────────────────────────── */
+  table.preview{ width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
+  table.preview th, table.preview td{ padding:8px 10px; border-bottom:1px solid var(--line); text-align:right; }
+  table.preview th:first-child, table.preview td:first-child{ text-align:left; }
+  table.preview th{ color:var(--forest-deep); font-size:11.5px; font-weight:700; }
+  table.preview tfoot td{ font-weight:700; border-top:2px solid var(--forest); border-bottom:none; }
+  table.preview td.fee{ color:#8a6a1f; font-weight:700; }
+
+  .issue-note{
+    margin-top:14px; background:#FBF1EE; border:1px solid #E9C8BE; color:#8a3a25;
+    border-radius:8px; padding:10px 12px; font-size:12.5px;
+  }
+
+  /* ── 다운로드 버튼 ──────────────────────── */
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background: var(--forest); color:#fff; border:none;
+    padding:13px 22px; border-radius:8px; font-size:14.5px; font-weight:700;
+    cursor:pointer; font-family:inherit; transition: background .15s, transform .1s;
+  }
+  .btn:hover{ background: var(--forest-deep); }
+  .btn:active{ transform: translateY(1px); }
+  .btn:disabled{ background:#B9C2B4; cursor:not-allowed; }
+  .btn svg{ width:17px; height:17px; }
+  .btn.ghost{
+    background:transparent; color:var(--forest); border:1.5px solid var(--forest);
+  }
+  .btn.ghost:hover{ background:#F3F6F0; }
+
+  footer.note{
+    text-align:center; font-size:12px; color:var(--ink-soft); margin-top:30px;
+  }
+
+  /* ── 메이트별 정산서 이미지(JPG) 캡처용 템플릿 ─────────── */
+  #imageRenderHost{ position:fixed; top:0; left:-10000px; z-index:-1; }
+  .statement-card{
+    width:1000px; background:#fff; padding:36px 40px 32px; box-sizing:border-box;
+    font-family:'Malgun Gothic','Noto Sans KR',sans-serif; color:#222222;
+  }
+  .stmt-title{ font-size:25px; font-weight:700; text-align:center; margin-bottom:6px; }
+  .stmt-org{ font-size:14.5px; text-align:center; color:#555555; margin-bottom:16px; }
+  .stmt-meta{ display:flex; justify-content:center; gap:70px; font-size:14px; margin-bottom:22px; }
+  .stmt-meta .b{ font-weight:700; }
+  .stmt-section-title{ font-size:15.5px; font-weight:700; margin:0 0 8px; }
+  .stmt-desc-box{
+    border:1px solid #B7B7B7; background:#F7F5EF; padding:12px 16px;
+    font-size:13.5px; text-align:center; line-height:1.55; margin-bottom:18px;
+  }
+  .stmt-params{ display:flex; border:1px solid #B7B7B7; margin-bottom:20px; }
+  .stmt-params .param{ flex:1; display:flex; border-right:1px solid #B7B7B7; }
+  .stmt-params .param:last-child{ border-right:none; }
+  .stmt-params .plabel{
+    background:#EDEBE3; font-weight:700; font-size:12.5px; flex:1;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:14px 8px; line-height:1.3;
+  }
+  .stmt-params .pvalue{
+    flex:1.3; display:flex; align-items:center; justify-content:center;
+    font-size:17px; font-weight:700; color:#1F4E99; padding:14px 8px;
+  }
+  .stmt-section-bar{
+    background:#DCE6F1; font-weight:700; font-size:14px; padding:9px 12px;
+  }
+  table.stmt-table{ width:100%; border-collapse:collapse; margin-bottom:20px; font-size:13px; }
+  table.stmt-table th{
+    background:#3A5A40; color:#fff; font-weight:700; padding:9px 6px;
+    border:1px solid #B7B7B7; text-align:center;
+  }
+  table.stmt-table td{ padding:8px 6px; border:1px solid #B7B7B7; text-align:center; }
+  table.stmt-table td.left{ text-align:left; }
+  table.stmt-table td.fee{ background:#FFF2CC; font-weight:700; color:#8a6a1f; }
+  table.stmt-table tr.subtotal td{ background:#F0EEE6; font-weight:700; }
+  table.stmt-table tr.total td{
+    background:#FFF2CC; font-weight:700; font-size:14px;
+    border-top:2px solid #22331F; border-bottom:2px solid #22331F;
+  }
+  .stmt-guide-box{
+    border:1px solid #B7B7B7; background:#F7F5EF; padding:12px 16px;
+    font-size:12.5px; line-height:1.75; margin-bottom:18px;
+  }
+  .stmt-footer{ text-align:center; font-weight:700; font-size:14px; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l6-11 4 6 3-4 5 9H3z"/><circle cx="17" cy="6" r="2"/></svg>
+      메이트 정산 자동화
+    </div>
+    <h1>메이트 용역비 정산서 자동 변환</h1>
+    <p>네이버페이 결제 내역(정산 원본) 엑셀을 올리면, 메이트별로 시트를 나눠 용역비 정산서 양식으로 재가공한 엑셀 파일을 만들어 드립니다. 모든 계산은 수식으로 들어가 있어 다운로드 후에도 숫자를 직접 확인·수정할 수 있어요.</p>
+  </header>
+
+  <div class="trail">
+    <div class="node"><div class="dot" id="dot1">1</div><div class="label" id="label1">파일 업로드</div></div>
+    <div class="path"></div>
+    <div class="node"><div class="dot" id="dot2">2</div><div class="label muted" id="label2">정산 기준 설정</div></div>
+    <div class="path"></div>
+    <div class="node"><div class="dot" id="dot3">3</div><div class="label muted" id="label3">확인 후 다운로드</div></div>
+  </div>
+
+  <!-- STEP 1 : 업로드 -->
+  <section class="card">
+    <h2><span class="num">1</span> 결제 내역 엑셀 업로드</h2>
+    <p class="desc">"운영일자 / 요일 / 프로그램명 / 메이트명 / 참가여부" 등의 컬럼이 담긴 원본 정산 엑셀(.xlsx)을 올려주세요. 시트가 여러 개여도 그중 원본 데이터 시트를 자동으로 찾습니다.</p>
+
+    <div class="dropzone" id="dropzone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 9l5-5 5 5"/><path d="M12 4v13"/></svg>
+      <div class="main">클릭하거나 파일을 끌어다 놓으세요</div>
+      <div class="sub">.xlsx 파일 1개</div>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx" />
+
+    <div id="fileChip" style="display:none;"></div>
+    <div id="uploadStatus" class="status-line"></div>
+  </section>
+
+  <!-- STEP 2 : 설정 -->
+  <section class="card" id="settingsCard" style="display:none;">
+    <h2><span class="num">2</span> 정산 기준 설정</h2>
+    <p class="desc">총매출액은 원본 파일의 결제 금액(정산기준금액)을 그대로 합산하기 때문에 프로그램마다 판매가가 달라도 자동으로 반영돼요. 아래 값은 판매관리비 계산에만 쓰여요.</p>
+
+    <div class="grid">
+      <div class="field">
+        <label>카드 수수료율(%)</label>
+        <input type="number" id="cardFeeRate" value="3.63" step="0.01" />
+      </div>
+      <div class="field">
+        <label>인당 보험료(원)</label>
+        <input type="number" id="insurance" value="1500" step="100" />
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:16px;">
+      <div class="field">
+        <label>조직명 <span class="hint">정산서 상단에 표시</span></label>
+        <input type="text" id="orgName" placeholder="예: 민낯여성산악회" />
+      </div>
+      <div class="field">
+        <label>프로그램 표시명</label>
+        <input type="text" id="programName" placeholder="예: ㅅㅅㅅ(숲·숨·쉼)" />
+      </div>
+      <div class="field">
+        <label>정산서 제목 접두어</label>
+        <input type="text" id="titlePrefix" placeholder="예: 2026년 7월" />
+      </div>
+      <div class="field">
+        <label>날짜만 있는 경우 기준 연도</label>
+        <input type="number" id="yearGuess" />
+      </div>
+      <div class="field">
+        <label>발행일</label>
+        <input type="date" id="issueDate" />
+      </div>
+      <div class="field">
+        <label>발행 기관명</label>
+        <input type="text" id="issuerName" placeholder="예: ㈜ ○○○" />
+      </div>
+    </div>
+
+    <div style="margin-top:22px;">
+      <label style="display:block; font-size:12px; font-weight:700; color:var(--forest-deep); margin-bottom:6px;">
+        메이트별 용역비 지급비율(%)
+        <span class="hint">메이트 명단 구글 시트 값을 자동으로 불러와요. 필요하면 직접 고쳐도 돼요.</span>
+      </label>
+      <div id="ratioFetchStatus" class="status-line"></div>
+      <div id="mateRatioContainer"></div>
+    </div>
+
+    <label class="checkline">
+      <input type="checkbox" id="includeNoShow" />
+      참가여부가 'N'(노쇼·불참)인 결제 건도 정산 인원에 포함
+    </label>
+
+    <div style="margin-top:20px;">
+      <button class="btn" id="processBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        정산서 미리보기 생성
+      </button>
+    </div>
+  </section>
+
+  <!-- STEP 3 : 미리보기 + 다운로드 -->
+  <section class="card" id="resultCard" style="display:none;">
+    <h2><span class="num">3</span> 메이트별 정산 요약</h2>
+    <p class="desc" id="resultDesc"></p>
+
+    <table class="preview">
+      <thead>
+        <tr>
+          <th>메이트명</th><th>정산 회차</th><th>참여인원</th><th>총매출액</th><th>용역수수료</th>
+        </tr>
+      </thead>
+      <tbody id="previewBody"></tbody>
+      <tfoot id="previewFoot"></tfoot>
+    </table>
+
+    <div id="issueNote" style="display:none;"></div>
+
+    <div style="margin-top:22px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn" id="downloadBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>
+        엑셀 파일 다운로드
+      </button>
+      <button class="btn ghost" id="downloadImagesBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        메이트별 정산서 이미지(JPG) 전체 다운로드
+      </button>
+      <button class="btn ghost" id="backBtn">설정 다시 조정하기</button>
+    </div>
+    <div id="imageDownloadStatus" class="status-line"></div>
+  </section>
+
+  <footer class="note">모든 계산은 이 브라우저 안에서만 이루어지며, 업로드한 파일은 서버로 전송되지 않습니다.</footer>
+</div>
+
+<div id="imageRenderHost"></div>
+
+<script>
+/* ============ core.js 시작 ============ */
+// core.js — 메이트 용역비 정산서 자동화 핵심 로직
+// 브라우저(exceljs.min.js 전역 ExcelJS)와 Node(require('exceljs')) 양쪽에서 동일하게 동작하도록
+// ExcelJS 네임스페이스를 인자로 받는 순수 함수 형태로 작성한다.
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.SettleCore = factory();
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+
+  const WEEKDAY_KR = ['일', '월', '화', '수', '목', '금', '토'];
+  const WEEKDAY_ORDER = { '월': 0, '화': 1, '수': 2, '목': 3, '금': 4, '토': 5, '일': 6 };
+
+  function normalize(s) {
+    return String(s == null ? '' : s).replace(/\s|\(|\)|·|:|：/g, '').trim();
+  }
+
+  // 헤더 후보 사전 — 원본 파일마다 표기가 조금씩 달라도 매칭되도록 여러 후보를 둔다.
+  const HEADER_CANDIDATES = {
+    opDate: ['운영일자', '일자', '날짜', '운영일'],
+    dow: ['요일'],
+    program: ['프로그램명', '프로그램'],
+    mate: ['메이트명', '메이트', '강사명'],
+    round: ['회차'],
+    buyer: ['구매자명', '구매자', '주문자명'],
+    attend: ['참가여부', '참석여부', '출석여부'],
+    amount: ['정산기준금액(A)', '정산기준금액A', '정산기준금액', '판매가', '결제금액'],
+  };
+
+  function findHeaderColumns(headerRowValues) {
+    const map = {};
+    const norm = headerRowValues.map(normalize);
+    Object.keys(HEADER_CANDIDATES).forEach((key) => {
+      const candidates = HEADER_CANDIDATES[key].map(normalize);
+      let idx = -1;
+      for (let i = 0; i < norm.length; i++) {
+        if (candidates.includes(norm[i])) { idx = i; break; }
+      }
+      map[key] = idx; // -1 이면 해당 컬럼 없음
+    });
+    return map;
+  }
+
+  // 워크북 안에서 원본 데이터가 담긴 시트를 찾는다.
+  // '전체' 라는 이름을 우선시하고, 없으면 헤더 매칭 점수가 가장 높은 시트를 고른다.
+  function pickSourceSheet(worksheets) {
+    let best = null;
+    let bestScore = -1;
+    worksheets.forEach((ws) => {
+      const headerRow = ws.getRow(1).values.slice(1).map((v) => (v == null ? '' : v));
+      const map = findHeaderColumns(headerRow);
+      const score = Object.values(map).filter((v) => v >= 0).length
+        + (normalize(ws.name) === normalize('전체') ? 100 : 0);
+      if (score > bestScore) {
+        bestScore = score;
+        best = { sheet: ws, colMap: map, headerRow };
+      }
+    });
+    return best;
+  }
+
+  function excelSerialToDate(serial) {
+    // Excel(Windows) 날짜 시스템: 1899-12-30 을 0으로 취급
+    const utcDays = Math.floor(serial - 25569);
+    const utcMs = utcDays * 86400 * 1000;
+    return new Date(utcMs);
+  }
+
+  // "6/7", "6.7", "2026-07-06", Date 객체, 엑셀 시리얼 숫자 등을 모두 Date로 변환
+  function parseOpDate(raw, yearGuess) {
+    if (raw == null || raw === '') return null;
+    if (raw instanceof Date) return raw;
+    if (typeof raw === 'number') return excelSerialToDate(raw);
+    const s = String(raw).trim();
+
+    let m = s.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+
+    m = s.match(/^(\d{1,2})[./](\d{1,2})\s*(?:\([월화수목금토일]\))?$/);
+    if (m) return new Date(yearGuess, Number(m[1]) - 1, Number(m[2]));
+
+    return null;
+  }
+
+  function fmtDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function weekdayKR(d) {
+    return WEEKDAY_KR[d.getDay()];
+  }
+
+  /**
+   * rows: 2차원 배열 (헤더 제외, 원본 시트의 각 행 values, 1-indexed 첫 요소는 버림 상태로 전달해도 되고 아니어도 됨 - 아래서 colMap 인덱스로 접근)
+   * colMap: findHeaderColumns 결과
+   * opts: { yearGuess, includeNoShow }
+   * 반환: { byMate: Map(mate -> [{date, dateStr, dow, program, count}]), issues: [rawRowObj], excludedNoShow }
+   */
+  function processRows(rows, colMap, opts) {
+    const byMateKey = new Map(); // mate -> Map(dateStr|program -> {date,dow,program,count,revenue})
+    const issues = [];
+    let excludedNoShow = 0;
+    let unresolvedAmount = 0;
+
+    rows.forEach((r) => {
+      const get = (key) => (colMap[key] >= 0 ? r[colMap[key]] : null);
+      const rawDate = get('opDate');
+      const mate = get('mate');
+      const program = get('program') || '';
+      const attend = get('attend');
+      const buyer = get('buyer');
+      const rawAmount = get('amount');
+
+      const mateStr = mate == null ? '' : String(mate).trim();
+      const date = parseOpDate(rawDate, opts.yearGuess);
+
+      if (!mateStr || !date) {
+        // 운영일자 또는 메이트명이 비어 있어 자동 매칭이 불가능한 행 → 확인 필요 목록으로
+        // (완전히 빈 행은 제외)
+        const hasAnyContent = [rawDate, mate, program, buyer].some((v) => v != null && String(v).trim() !== '');
+        if (hasAnyContent) {
+          issues.push({
+            원본운영일자: rawDate == null ? '' : String(rawDate),
+            원본메이트명: mateStr,
+            프로그램명: program == null ? '' : String(program),
+            구매자명: buyer == null ? '' : String(buyer),
+            사유: !date && !mateStr ? '운영일자·메이트명 확인 필요'
+              : !date ? '운영일자 확인 필요' : '메이트명 확인 필요',
+          });
+        }
+        return;
+      }
+
+      const attendStr = attend == null ? '' : String(attend).trim().toUpperCase();
+      const isNoShow = colMap.attend >= 0 && attendStr && attendStr !== 'Y';
+      if (isNoShow && !opts.includeNoShow) {
+        excludedNoShow++;
+        return;
+      }
+
+      const amount = Number(rawAmount);
+      const amountValid = colMap.amount >= 0 && Number.isFinite(amount);
+      if (!amountValid) unresolvedAmount++;
+
+      const dateStr = fmtDate(date);
+      const progStr = String(program).trim();
+      const key = `${dateStr}|||${progStr}`;
+
+      if (!byMateKey.has(mateStr)) byMateKey.set(mateStr, new Map());
+      const mateMap = byMateKey.get(mateStr);
+      if (!mateMap.has(key)) {
+        mateMap.set(key, { date, dateStr, dow: weekdayKR(date), program: progStr, count: 0, revenue: 0 });
+      }
+      const g = mateMap.get(key);
+      g.count += 1;
+      g.revenue += amountValid ? amount : 0;
+    });
+
+    const byMate = new Map();
+    Array.from(byMateKey.keys()).sort((a, b) => a.localeCompare(b, 'ko')).forEach((mateStr) => {
+      const arr = Array.from(byMateKey.get(mateStr).values());
+      arr.sort((a, b) => (a.date - b.date) || a.program.localeCompare(b.program, 'ko'));
+      byMate.set(mateStr, arr);
+    });
+
+    return { byMate, issues, excludedNoShow, unresolvedAmount, amountColumnMissing: colMap.amount < 0 };
+  }
+
+  function uniqueWeekdaysLabel(sessions) {
+    const set = new Set(sessions.map((s) => s.dow));
+    const ordered = Object.keys(WEEKDAY_ORDER).sort((a, b) => WEEKDAY_ORDER[a] - WEEKDAY_ORDER[b]);
+    return ordered.filter((d) => set.has(d)).map((d) => `${d}요일`).join(', ');
+  }
+
+  function safeSheetName(name, used) {
+    let base = String(name).replace(/[:\\/?*\[\]]/g, '_').slice(0, 28).trim() || '메이트';
+    let candidate = base;
+    let i = 2;
+    while (used.has(candidate)) {
+      candidate = `${base}(${i})`.slice(0, 31);
+      i++;
+    }
+    used.add(candidate);
+    return candidate;
+  }
+
+  // 세션(행) 단위로 반올림한 뒤 합산한다 — 각 메이트 시트의 소계/총합계 행(수식이 각 행을 SUM)과
+  // 정확히 같은 값이 나오도록, 합계를 먼저 구하고 한 번에 반올림하지 않는다.
+  // 총매출액은 원본 데이터의 실제 결제 금액(정산기준금액) 합계를 그대로 쓴다 — 프로그램마다 판매가가 달라도 자동 반영됨.
+  function getMateRatio(mate, opts) {
+    const map = opts.payoutRatioByMate || {};
+    const v = map[mate];
+    return typeof v === 'number' && Number.isFinite(v) ? v : opts.defaultPayoutRatio;
+  }
+
+  // 세션 하나(한 회차)의 카드수수료/보험료/공제후금액/용역수수료를 계산 — 엑셀 수식과 이미지 렌더링이 동일한 로직을 공유
+  function computeSessionRow(s, opts, payoutRatio) {
+    const revenue = s.revenue;
+    const cardFee = Math.round(revenue * opts.cardFeeRate);
+    const insurance = s.count * opts.insurancePerPerson;
+    const net = revenue - cardFee - insurance;
+    const fee = Math.round(net * payoutRatio);
+    return { revenue, cardFee, insurance, net, fee };
+  }
+
+  function summarizeMate(sessions, opts, payoutRatio) {
+    const n = sessions.length;
+    let totalPeople = 0, totalRevenue = 0, totalCardFee = 0, totalInsurance = 0, totalNet = 0, totalFee = 0;
+    sessions.forEach((s) => {
+      const r = computeSessionRow(s, opts, payoutRatio);
+      totalPeople += s.count;
+      totalRevenue += r.revenue;
+      totalCardFee += r.cardFee;
+      totalInsurance += r.insurance;
+      totalNet += r.net;
+      totalFee += r.fee;
+    });
+    return { n, totalPeople, totalRevenue, totalCardFee, totalInsurance, totalNet, totalFee };
+  }
+
+  const THIN = { style: 'thin', color: { argb: 'FFB7B7B7' } };
+  const MED = { style: 'medium', color: { argb: 'FF203324' } };
+  const BOX = { top: THIN, bottom: THIN, left: THIN, right: THIN };
+
+  function styleCell(cell, opt) {
+    opt = opt || {};
+    cell.font = Object.assign({ name: 'Malgun Gothic', size: opt.size || 10, color: { argb: opt.color || 'FF222222' } }, opt.font || {});
+    cell.alignment = Object.assign({ vertical: 'middle', horizontal: 'left', wrapText: !!opt.wrap }, opt.alignment || {});
+    if (opt.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opt.fill } };
+    if (opt.border !== false) cell.border = opt.border || BOX;
+  }
+
+  function buildWorkbook(ExcelJS, data, opts) {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = '민낯여성산악회 정산 자동화';
+    wb.created = new Date();
+
+    const COLS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+    const usedNames = new Set();
+
+    // ── 요약 시트 ──────────────────────────────────────────
+    const sumWs = wb.addWorksheet(safeSheetName('요약', usedNames), { views: [{ showGridLines: false }] });
+    sumWs.columns = [
+      { width: 3 }, { width: 16 }, { width: 12 }, { width: 14 }, { width: 14 },
+      { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 },
+    ];
+    sumWs.mergeCells('B2:F2');
+    sumWs.getCell('B2').value = `${opts.titlePrefix} 메이트별 용역비 정산 요약`;
+    styleCell(sumWs.getCell('B2'), { size: 16, font: { bold: true }, alignment: { horizontal: 'left' }, border: false });
+    sumWs.getRow(2).height = 26;
+
+    sumWs.getCell('B3').value = `발행일: ${opts.issueDateKR}`;
+    styleCell(sumWs.getCell('B3'), { size: 10, alignment: { horizontal: 'left' }, border: false, color: 'FF555555' });
+
+    const sumHeaderRow = 5;
+    const sumHeaders = ['메이트명', '정산 회차 수', '총 참여인원', '총매출액(원)', '카드수수료(원)', '보험료(원)', '공제후금액(원)', '용역수수료(원)'];
+    sumHeaders.forEach((h, i) => {
+      const cell = sumWs.getCell(sumHeaderRow, i + 2);
+      cell.value = h;
+      styleCell(cell, { size: 10, font: { bold: true, color: { argb: 'FFFFFFFF' } }, fill: 'FF3A5A40', alignment: { horizontal: 'center' } });
+    });
+
+    let sr = sumHeaderRow + 1;
+    const mateNames = Array.from(data.byMate.keys());
+    mateNames.forEach((mate) => {
+      const sessions = data.byMate.get(mate);
+      const { n, totalPeople, totalRevenue, totalCardFee, totalInsurance, totalNet, totalFee } = summarizeMate(sessions, opts, getMateRatio(mate, opts));
+
+      const rowVals = [mate, n, totalPeople, totalRevenue, totalCardFee, totalInsurance, totalNet, totalFee];
+      rowVals.forEach((v, i) => {
+        const cell = sumWs.getCell(sr, i + 2);
+        cell.value = v;
+        const isNum = i > 0;
+        styleCell(cell, {
+          size: 10,
+          alignment: { horizontal: isNum ? 'right' : 'left' },
+          fill: i === 7 ? 'FFFFF2CC' : (sr % 2 === 0 ? 'FFFAFAF7' : 'FFFFFFFF'),
+          font: i === 7 ? { bold: true } : {},
+        });
+        if (isNum && i !== 1 && i !== 2) cell.numFmt = '#,##0';
+      });
+      sr++;
+    });
+
+    if (data.issues.length) {
+      sr += 1;
+      sumWs.getCell(sr, 2).value = `※ 운영일자 또는 메이트명이 확인되지 않아 집계에서 제외된 행 ${data.issues.length}건이 있어요(원본 데이터의 해당 값을 확인해주세요).`;
+      styleCell(sumWs.getCell(sr, 2), { size: 10, color: 'FFB00020', border: false });
+    }
+    if (data.excludedNoShow) {
+      sr += 1;
+      sumWs.getCell(sr, 2).value = `※ 참가여부 'N'(노쇼/불참)으로 표시되어 집계에서 제외된 결제 건 ${data.excludedNoShow}건.`;
+      styleCell(sumWs.getCell(sr, 2), { size: 10, color: 'FF555555', border: false });
+    }
+
+    // ── 메이트별 정산서 시트 ──────────────────────────────
+    mateNames.forEach((mate) => {
+      const sessions = data.byMate.get(mate);
+      const payoutRatio = getMateRatio(mate, opts);
+      const ws = wb.addWorksheet(safeSheetName(mate, usedNames), { views: [{ showGridLines: false }] });
+      ws.columns = [
+        { width: 2.5 }, { width: 9 }, { width: 13 }, { width: 8 }, { width: 30 },
+        { width: 10 }, { width: 13 }, { width: 12 }, { width: 12 }, { width: 13 }, { width: 13 },
+      ];
+
+      const title = `${opts.titlePrefix} ${opts.programName} 프로그램 메이트 용역비 정산서`;
+      ws.mergeCells('B2:K2');
+      ws.getCell('B2').value = title;
+      styleCell(ws.getCell('B2'), { size: 17, font: { bold: true }, alignment: { horizontal: 'center' }, border: false });
+      ws.getRow(2).height = 30;
+
+      ws.mergeCells('B3:K3');
+      ws.getCell('B3').value = `"${opts.orgName}"`;
+      styleCell(ws.getCell('B3'), { size: 11, alignment: { horizontal: 'center' }, border: false, color: 'FF555555' });
+
+      ws.mergeCells('G4:H4');
+      ws.getCell('G4').value = `메이트 명 : ${mate}`;
+      styleCell(ws.getCell('G4'), { size: 11, font: { bold: true }, alignment: { horizontal: 'left' }, border: false });
+      ws.mergeCells('J4:K4');
+      ws.getCell('J4').value = `일자 : ${opts.issueDateKR}`;
+      styleCell(ws.getCell('J4'), { size: 11, alignment: { horizontal: 'left' }, border: false });
+
+      ws.mergeCells('B6:K6');
+      ws.getCell('B6').value = '■ 용역수수료 정산 기준';
+      styleCell(ws.getCell('B6'), { size: 12, font: { bold: true }, border: false });
+
+      ws.mergeCells('B7:K7');
+      ws.getCell('B7').value = `수수료 = 회당 총매출액(결제 내역 정산기준금액 합계)에서 판매관리비(카드수수료 ${(opts.cardFeeRate * 100).toFixed(2)}% 및 보험료)를 공제한 금액 중 ${(payoutRatio * 100).toFixed(0)}%(메이트 등급별 지급비율)를 회당 용역 수수료로 산정하여 지급한다.`;
+      styleCell(ws.getCell('B7'), { size: 10.5, alignment: { horizontal: 'center', wrapText: true }, fill: 'FFF7F5EF' });
+      ws.getRow(7).height = 34;
+
+      // 파라미터 행 (판매가는 프로그램마다 달라 원본 데이터의 결제금액을 그대로 쓰므로 여기서는 받지 않는다)
+      const paramRow = 9;
+      ws.getRow(paramRow).height = 36;
+      const params = [
+        ['B', '카드\n수수료율', 'C', opts.cardFeeRate, '0.00%'],
+        ['D', '인당\n보험료', 'E', opts.insurancePerPerson, '#,##0'],
+        ['F', '용역비\n지급비율', 'G', payoutRatio, '0.00%'],
+      ];
+      params.forEach(([lc, label, vc, val, fmt]) => {
+        const lcell = ws.getCell(`${lc}${paramRow}`);
+        lcell.value = label;
+        styleCell(lcell, { size: 10, font: { bold: true }, alignment: { horizontal: 'center', wrapText: true }, fill: 'FFEDEBE3' });
+        const vcell = ws.getCell(`${vc}${paramRow}`);
+        vcell.value = val;
+        vcell.numFmt = fmt;
+        styleCell(vcell, { size: 12, font: { bold: true, color: { argb: 'FF1F4E99' } }, alignment: { horizontal: 'center' } });
+      });
+      ['H', 'I', 'J', 'K'].forEach((c) => {
+        ws.getCell(`${c}${paramRow}`).value = null;
+        styleCell(ws.getCell(`${c}${paramRow}`), { border: false });
+      });
+
+      const n = sessions.length;
+      const wdLabel = uniqueWeekdaysLabel(sessions);
+      const sectionRow = 11;
+      ws.mergeCells(`B${sectionRow}:K${sectionRow}`);
+      ws.getCell(`B${sectionRow}`).value = `① 메이트 정산 내역 — ${wdLabel} 총 ${n}회`;
+      styleCell(ws.getCell(`B${sectionRow}`), { size: 11, font: { bold: true }, fill: 'FFDCE6F1', alignment: { horizontal: 'left' } });
+
+      const headerRow = sectionRow + 1;
+      const headers = ['연번', '운영일자', '요일', '프로그램명', '참여인원', '총매출액(원)', '카드수수료(원)', '보험료(원)', '공제후금액(원)', '용역수수료(원)'];
+      headers.forEach((h, i) => {
+        const cell = ws.getCell(headerRow, i + 2);
+        cell.value = h;
+        styleCell(cell, { size: 10, font: { bold: true, color: { argb: 'FFFFFFFF' } }, fill: 'FF3A5A40', alignment: { horizontal: 'center' } });
+      });
+
+      const firstDataRow = headerRow + 1;
+      sessions.forEach((s, i) => {
+        const row = firstDataRow + i;
+        ws.getCell(row, 2).value = i + 1;
+        ws.getCell(row, 3).value = s.dateStr;
+        ws.getCell(row, 4).value = s.dow;
+        ws.getCell(row, 5).value = s.program;
+        ws.getCell(row, 6).value = s.count;
+
+        const calc = computeSessionRow(s, opts, payoutRatio);
+
+        // 총매출액은 원본 결제 데이터의 실제 금액 합계(프로그램마다 판매가가 달라질 수 있으므로 계산이 아닌 입력값)
+        const revCell = ws.getCell(row, 7);
+        revCell.value = calc.revenue;
+        revCell.numFmt = '#,##0';
+
+        const cardCell = ws.getCell(row, 8);
+        cardCell.value = { formula: `ROUND(G${row}*$C$${paramRow},0)`, result: calc.cardFee };
+        cardCell.numFmt = '#,##0';
+
+        const insCell = ws.getCell(row, 9);
+        insCell.value = { formula: `F${row}*$E$${paramRow}`, result: calc.insurance };
+        insCell.numFmt = '#,##0';
+
+        const netCell = ws.getCell(row, 10);
+        netCell.value = { formula: `G${row}-H${row}-I${row}`, result: calc.net };
+        netCell.numFmt = '#,##0';
+
+        const feeCell = ws.getCell(row, 11);
+        feeCell.value = { formula: `ROUND(J${row}*$G$${paramRow},0)`, result: calc.fee };
+        feeCell.numFmt = '#,##0';
+
+        for (let c = 2; c <= 11; c++) {
+          const cell = ws.getCell(row, c);
+          const isFee = c === 11;
+          const isRevenue = c === 7;
+          styleCell(cell, {
+            size: 10,
+            alignment: { horizontal: c === 5 ? 'left' : 'center' },
+            fill: isFee ? 'FFFFF2CC' : (i % 2 === 0 ? 'FFFFFFFF' : 'FFFAFAF7'),
+            font: isFee ? { bold: true } : (isRevenue ? { color: { argb: 'FF1F4E99' } } : {}),
+          });
+        }
+      });
+
+      const subtotalRow = firstDataRow + n;
+      ws.mergeCells(`B${subtotalRow}:E${subtotalRow}`);
+      ws.getCell(`B${subtotalRow}`).value = '소계';
+      styleCell(ws.getCell(`B${subtotalRow}`), { size: 10, font: { bold: true }, alignment: { horizontal: 'center' }, fill: 'FFF0EEE6' });
+      ['F', 'G', 'H', 'I', 'J', 'K'].forEach((col) => {
+        const cell = ws.getCell(`${col}${subtotalRow}`);
+        cell.value = { formula: `SUM(${col}${firstDataRow}:${col}${subtotalRow - 1})`, result: null };
+        cell.numFmt = '#,##0';
+        styleCell(cell, { size: 10, font: { bold: true }, alignment: { horizontal: 'center' }, fill: 'FFF0EEE6' });
+      });
+
+      const totalRow = subtotalRow + 1;
+      ws.getRow(totalRow).height = 24;
+      ws.mergeCells(`B${totalRow}:E${totalRow}`);
+      ws.getCell(`B${totalRow}`).value = `총 합계 (${n}회)`;
+      styleCell(ws.getCell(`B${totalRow}`), { size: 12, font: { bold: true }, alignment: { horizontal: 'center' }, fill: 'FFFFF2CC', border: { top: MED, bottom: MED, left: MED, right: THIN } });
+      ['F', 'G', 'H', 'I', 'J', 'K'].forEach((col, idx) => {
+        const cell = ws.getCell(`${col}${totalRow}`);
+        cell.value = { formula: `${col}${subtotalRow}`, result: null };
+        cell.numFmt = '#,##0';
+        const isLast = idx === 5;
+        styleCell(cell, { size: 12, font: { bold: true }, alignment: { horizontal: 'center' }, fill: 'FFFFF2CC', border: { top: MED, bottom: MED, left: THIN, right: isLast ? MED : THIN } });
+      });
+
+      let r = totalRow + 2;
+      ws.mergeCells(`B${r}:K${r}`);
+      ws.getCell(`B${r}`).value = '■ 안내사항';
+      styleCell(ws.getCell(`B${r}`), { size: 12, font: { bold: true }, border: false });
+      r += 1;
+
+      const guideBoxStart = r;
+      const guideLines = [
+        '· 총매출액 = 해당 회차 참여자 결제 내역(정산기준금액)의 합계 — 원본 데이터 그대로 반영되며 프로그램별 판매가 차이가 자동으로 반영됩니다.',
+        '· 공제후금액 = 총매출액 - 카드수수료(' + (opts.cardFeeRate * 100).toFixed(2) + '%) - 보험료(인당 ' + opts.insurancePerPerson.toLocaleString('ko-KR') + '원)',
+        '· 용역수수료 = 공제후금액 × ' + (payoutRatio * 100).toFixed(0) + '% (메이트 등급별 지급비율)',
+      ];
+      ws.mergeCells(`B${guideBoxStart}:K${guideBoxStart}`);
+      ws.getCell(`B${guideBoxStart}`).value = guideLines.join('\n');
+      styleCell(ws.getCell(`B${guideBoxStart}`), { size: 10, alignment: { horizontal: 'left', wrapText: true, vertical: 'top' }, fill: 'FFF7F5EF' });
+      ws.getRow(guideBoxStart).height = 16 * guideLines.length + 8;
+      r = guideBoxStart + 1;
+
+      const plainLines = [];
+      plainLines.forEach((line) => {
+        ws.mergeCells(`B${r}:K${r}`);
+        ws.getCell(`B${r}`).value = line;
+        styleCell(ws.getCell(`B${r}`), { size: 9.5, alignment: { horizontal: 'left' }, border: false, color: 'FF444444' });
+        r += 1;
+      });
+
+      r += 1;
+      ws.mergeCells(`B${r}:K${r}`);
+      ws.getCell(`B${r}`).value = `발행일: ${opts.issueDateKR}      발행: ${opts.issuerName}`;
+      styleCell(ws.getCell(`B${r}`), { size: 11, font: { bold: true }, alignment: { horizontal: 'center' }, border: false });
+    });
+
+    return wb;
+  }
+
+  return {
+    findHeaderColumns,
+    pickSourceSheet,
+    parseOpDate,
+    weekdayKR,
+    fmtDate,
+    processRows,
+    buildWorkbook,
+    safeSheetName,
+    summarizeMate,
+    computeSessionRow,
+    uniqueWeekdaysLabel,
+    getMateRatio,
+  };
+});
+
+/* ============ core.js 끝 ============ */
+</script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  let picked = null;   // { sheet, colMap, headerRow }
+  let rows = null;     // 원본 데이터 행들
+  let lastData = null; // processRows 결과
+  let lastOpts = null;
+
+  const dot1 = $('dot1'), dot2 = $('dot2'), dot3 = $('dot3');
+  const label2 = $('label2'), label3 = $('label3');
+
+  function setStep(n) {
+    [dot1, dot2, dot3].forEach((d, i) => d.classList.toggle('done', i < n));
+    label2.classList.toggle('muted', n < 2);
+    label3.classList.toggle('muted', n < 3);
+  }
+
+  // ── 메이트 명단(구글 시트)에서 등급별 지급비율 불러오기 ──────
+  // 구글 시트의 gviz 엔드포인트는 fetch()에 필요한 CORS 허용 헤더를 내려주지 않기 때문에
+  // (공유 설정과 무관하게 항상 막힘) <script> 태그로 불러오는 JSONP 방식을 쓴다.
+  const RATIO_SHEET_ID = '1ya8bMVlI1KecJJv-UTgSEeLpZk1cFSfNfCsuEPhGt0k';
+  const DEFAULT_PAYOUT_RATIO = 0.61;
+  const JSONP_TIMEOUT_MS = 8000;
+
+  let sheetRatios = null;        // { 메이트명: 0.8, ... } — 불러오기 성공 시 채워짐
+  let sheetRatiosState = 'loading'; // 'loading' | 'ok' | 'error'
+  const ratioFetchPromise = fetchMateRatiosFromSheet();
+
+  function normalizeHeader(s) {
+    return String(s || '').replace(/\s|\(|\)/g, '').trim();
+  }
+
+  function fetchMateRatiosFromSheet() {
+    return new Promise((resolve) => {
+      if (typeof document === 'undefined') {
+        sheetRatios = null; sheetRatiosState = 'error'; resolve(null); return;
+      }
+
+      const cbName = '__mateRatioCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+      let settled = false;
+
+      const finish = (map) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        sheetRatios = map;
+        sheetRatiosState = map ? 'ok' : 'error';
+        if (!map) console.error('메이트 명단 시트 불러오기 실패 (JSONP)');
+        resolve(map);
+      };
+
+      window[cbName] = (data) => {
+        try {
+          const cols = (data.table.cols || []).map((c) => normalizeHeader(c.label));
+          const nameIdx = cols.findIndex((h) => ['메이트이름', '메이트명', '메이트'].includes(h));
+          const ratioIdx = cols.findIndex((h) => ['지급비율', '지급율', '비율'].includes(h));
+          if (nameIdx < 0 || ratioIdx < 0) throw new Error('헤더를 찾을 수 없음: ' + cols.join(','));
+
+          const map = {};
+          (data.table.rows || []).forEach((row) => {
+            const cells = row.c || [];
+            const name = cells[nameIdx] && cells[nameIdx].v != null ? String(cells[nameIdx].v).trim() : '';
+            const ratioCell = cells[ratioIdx];
+            if (!name || !ratioCell || ratioCell.v == null) return;
+            let v = Number(ratioCell.v);
+            if (!Number.isFinite(v)) return;
+            if (v > 1) v = v / 100; // "75" 처럼 %단위 숫자로 적혀 있으면 0.75로 변환
+            map[name] = v;
+          });
+          finish(map);
+        } catch (err) {
+          console.error('메이트 명단 시트 응답 파싱 실패', err);
+          finish(null);
+        }
+      };
+
+      const script = document.createElement('script');
+      script.src = `https://docs.google.com/spreadsheets/d/${RATIO_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cbName}&headers=1`;
+      script.onerror = () => finish(null);
+      document.head.appendChild(script);
+
+      const timer = setTimeout(() => finish(null), JSONP_TIMEOUT_MS);
+    });
+  }
+
+  // 오늘 날짜 → 기본값 세팅
+  (function initDefaults() {
+    const today = new Date();
+    $('yearGuess').value = today.getFullYear();
+    const iso = today.toISOString().slice(0, 10);
+    $('issueDate').value = iso;
+    $('orgName').value = '민낯여성산악회';
+    $('issuerName').value = '㈜ 수많은앤셜리';
+  })();
+
+  function fmtIssueDateKR(isoStr) {
+    const d = new Date(isoStr + 'T00:00:00');
+    const wd = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일(${wd})`;
+  }
+
+  function safeScrollIntoView(el) {
+    if (el && typeof el.scrollIntoView === 'function') {
+      try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* noop */ }
+    }
+  }
+
+  function bytesToSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  // ── 메이트별 지급비율 표 렌더링 ──────────────────────
+  const mateRatioContainer = $('mateRatioContainer');
+  const ratioFetchStatus = $('ratioFetchStatus');
+  let currentMateNames = [];
+
+  function renderMateRatioRow(mate) {
+    const known = sheetRatios && sheetRatios[mate] != null;
+    const pct = known ? (sheetRatios[mate] * 100) : (DEFAULT_PAYOUT_RATIO * 100);
+    const row = document.createElement('div');
+    row.className = 'mate-ratio-row';
+    row.innerHTML = `
+      <span class="name">${mate}</span>
+      <input type="number" step="0.5" value="${pct}" data-mate="${mate.replace(/"/g, '&quot;')}" />
+      <span class="pct">%</span>
+      <span class="tag ${known ? 'matched' : 'missing'}">${known ? '시트 반영' : '명단에 없음 · 확인 필요'}</span>
+    `;
+    return row;
+  }
+
+  function renderMateRatioTable(mateNames) {
+    currentMateNames = mateNames;
+    mateRatioContainer.innerHTML = '';
+    mateNames.forEach((mate) => mateRatioContainer.appendChild(renderMateRatioRow(mate)));
+    updateRatioFetchStatus();
+  }
+
+  function updateRatioFetchStatus() {
+    if (sheetRatiosState === 'loading') {
+      ratioFetchStatus.textContent = '메이트 명단 구글 시트에서 지급비율을 불러오는 중…';
+      ratioFetchStatus.className = 'status-line';
+    } else if (sheetRatiosState === 'ok') {
+      ratioFetchStatus.textContent = '메이트 명단 구글 시트에서 지급비율을 불러왔어요.';
+      ratioFetchStatus.className = 'status-line ok';
+    } else {
+      ratioFetchStatus.textContent = '구글 시트에서 지급비율을 불러오지 못했어요. 기본값(61%)이 채워져 있으니 아래에서 직접 확인·수정해주세요.';
+      ratioFetchStatus.className = 'status-line err';
+    }
+  }
+
+  function collectMateRatios() {
+    const map = {};
+    mateRatioContainer.querySelectorAll('input[data-mate]').forEach((input) => {
+      const mate = input.getAttribute('data-mate');
+      const v = Number(input.value);
+      map[mate] = Number.isFinite(v) ? v / 100 : DEFAULT_PAYOUT_RATIO;
+    });
+    return map;
+  }
+
+  // 파일이 아직 없을 때도, 시트 로딩이 끝나면 상태 문구를 갱신해둔다 (업로드 후 바로 보이도록)
+  ratioFetchPromise.then(() => {
+    if (currentMateNames.length) renderMateRatioTable(currentMateNames);
+  });
+
+  // ── 업로드 처리 ──────────────────────────────────────
+  const dropzone = $('dropzone');
+  const fileInput = $('fileInput');
+  const fileChip = $('fileChip');
+  const uploadStatus = $('uploadStatus');
+  const settingsCard = $('settingsCard');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  async function handleFile(file) {
+    uploadStatus.textContent = '파일을 읽는 중입니다…';
+    uploadStatus.className = 'status-line';
+    settingsCard.style.display = 'none';
+    $('resultCard').style.display = 'none';
+    setStep(1);
+
+    if (!/\.xlsx$/i.test(file.name)) {
+      uploadStatus.textContent = '.xlsx 파일만 업로드할 수 있어요.';
+      uploadStatus.className = 'status-line err';
+      return;
+    }
+
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buf);
+
+      picked = SettleCore.pickSourceSheet(wb.worksheets);
+      const need = ['opDate', 'mate', 'amount'];
+      const missing = need.filter((k) => picked.colMap[k] < 0);
+      if (missing.length) {
+        const labelMap = { opDate: '운영일자', mate: '메이트 명', amount: '정산기준금액(A)' };
+        const missingLabels = missing.map((k) => labelMap[k]).join(', ');
+        uploadStatus.textContent = `"${picked.sheet.name}" 시트에서 ${missingLabels} 컬럼을 찾지 못했어요. 원본 파일의 헤더 이름을 확인해주세요.`;
+        uploadStatus.className = 'status-line err';
+        picked = null;
+        return;
+      }
+
+      rows = [];
+      picked.sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+        if (rowNumber === 1) return;
+        rows.push(row.values.slice(1));
+      });
+
+      // 메이트 목록을 미리 뽑아서 지급비율 표를 바로 보여준다 (참가여부 필터 없이, 단순 등장 여부 기준)
+      const mateSet = new Set();
+      rows.forEach((r) => {
+        const v = picked.colMap.mate >= 0 ? r[picked.colMap.mate] : null;
+        const s = v == null ? '' : String(v).trim();
+        if (s) mateSet.add(s);
+      });
+      renderMateRatioTable(Array.from(mateSet).sort((a, b) => a.localeCompare(b, 'ko')));
+
+      fileChip.style.display = 'flex';
+      fileChip.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg>
+        <span class="name">${file.name}</span>
+        <span class="meta">${bytesToSize(file.size)} · "${picked.sheet.name}" 시트 · ${rows.length}행 인식</span>
+        <button id="clearFileBtn" type="button">다시 선택</button>
+      `;
+      $('clearFileBtn').addEventListener('click', () => {
+        picked = null; rows = null;
+        fileInput.value = '';
+        fileChip.style.display = 'none';
+        uploadStatus.textContent = '';
+        settingsCard.style.display = 'none';
+        $('resultCard').style.display = 'none';
+        setStep(0);
+      });
+
+      uploadStatus.textContent = `업로드 완료. 아래에서 정산 기준을 확인한 뒤 미리보기를 생성하세요.`;
+      uploadStatus.className = 'status-line ok';
+      settingsCard.style.display = 'block';
+      setStep(2);
+      safeScrollIntoView(settingsCard);
+    } catch (err) {
+      console.error(err);
+      uploadStatus.textContent = '파일을 읽는 중 오류가 발생했어요. 올바른 .xlsx 파일인지 확인해주세요.';
+      uploadStatus.className = 'status-line err';
+    }
+  }
+
+  // ── 옵션 수집 ────────────────────────────────────────
+  function collectOpts() {
+    const isoDate = $('issueDate').value || new Date().toISOString().slice(0, 10);
+    return {
+      cardFeeRate: (Number($('cardFeeRate').value) || 0) / 100,
+      insurancePerPerson: Number($('insurance').value) || 0,
+      defaultPayoutRatio: DEFAULT_PAYOUT_RATIO,
+      payoutRatioByMate: collectMateRatios(),
+      yearGuess: Number($('yearGuess').value) || new Date().getFullYear(),
+      includeNoShow: $('includeNoShow').checked,
+      orgName: $('orgName').value.trim() || '민낯여성산악회',
+      programName: $('programName').value.trim() || '메이트',
+      titlePrefix: $('titlePrefix').value.trim() || '',
+      issueDateKR: fmtIssueDateKR(isoDate),
+      issuerName: $('issuerName').value.trim() || '',
+    };
+  }
+
+  // ── 미리보기 생성 ────────────────────────────────────
+  $('processBtn').addEventListener('click', () => {
+    if (!rows || !picked) return;
+    const opts = collectOpts();
+    const data = SettleCore.processRows(rows, picked.colMap, opts);
+
+    if (data.byMate.size === 0) {
+      alert('정산 대상 데이터를 찾지 못했어요. 참가여부가 모두 N이거나, 운영일자·메이트명이 비어 있는지 확인해주세요.');
+      return;
+    }
+
+    lastData = data;
+    lastOpts = opts;
+
+    const tbody = $('previewBody');
+    const tfoot = $('previewFoot');
+    tbody.innerHTML = '';
+    let gN = 0, gPeople = 0, gRevenue = 0, gFee = 0;
+
+    Array.from(data.byMate.keys()).forEach((mate) => {
+      const sessions = data.byMate.get(mate);
+      const s = SettleCore.summarizeMate(sessions, opts, SettleCore.getMateRatio(mate, opts));
+      gN += s.n; gPeople += s.totalPeople; gRevenue += s.totalRevenue; gFee += s.totalFee;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${mate}</td>
+        <td>${s.n}회</td>
+        <td>${s.totalPeople}명</td>
+        <td>${s.totalRevenue.toLocaleString('ko-KR')}원</td>
+        <td class="fee">${s.totalFee.toLocaleString('ko-KR')}원</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tfoot.innerHTML = `
+      <tr>
+        <td>합계 (${data.byMate.size}명)</td>
+        <td>${gN}회</td>
+        <td>${gPeople}명</td>
+        <td>${gRevenue.toLocaleString('ko-KR')}원</td>
+        <td class="fee">${gFee.toLocaleString('ko-KR')}원</td>
+      </tr>
+    `;
+
+    $('resultDesc').textContent = `메이트 ${data.byMate.size}명, 총 ${gN}회 세션 기준으로 계산했어요. 다운로드한 엑셀에는 메이트별 시트와 요약 시트가 함께 들어갑니다.`;
+
+    const issueNote = $('issueNote');
+    if (data.issues.length || data.excludedNoShow || data.unresolvedAmount) {
+      let msg = '';
+      if (data.issues.length) msg += `운영일자 또는 메이트명을 확인할 수 없어 집계에서 제외된 행이 ${data.issues.length}건 있어요. (원본 파일에서 해당 행을 확인해주세요.)`;
+      if (data.excludedNoShow) msg += (msg ? '<br>' : '') + `참가여부 'N'으로 표시되어 집계에서 제외된 결제 건이 ${data.excludedNoShow}건 있어요.`;
+      if (data.unresolvedAmount) msg += (msg ? '<br>' : '') + `정산기준금액 값을 읽지 못한 결제 건이 ${data.unresolvedAmount}건 있어 해당 건은 매출 0원으로 집계됐어요.`;
+      issueNote.innerHTML = msg;
+      issueNote.style.display = 'block';
+    } else {
+      issueNote.style.display = 'none';
+    }
+
+    $('resultCard').style.display = 'block';
+    setStep(3);
+    safeScrollIntoView($('resultCard'));
+  });
+
+  $('backBtn').addEventListener('click', () => {
+    $('resultCard').style.display = 'none';
+    setStep(2);
+    safeScrollIntoView(settingsCard);
+  });
+
+  // ── 다운로드 ─────────────────────────────────────────
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  $('downloadBtn').addEventListener('click', async () => {
+    if (!lastData || !lastOpts) return;
+    const btn = $('downloadBtn');
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = '엑셀 생성 중…';
+    try {
+      const wb = SettleCore.buildWorkbook(ExcelJS, lastData, lastOpts);
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const prefix = lastOpts.titlePrefix ? lastOpts.titlePrefix.replace(/\s+/g, '') + '_' : '';
+      downloadBlob(blob, `${prefix}메이트_용역비_정산서.xlsx`);
+    } catch (err) {
+      console.error(err);
+      alert('엑셀 파일을 만드는 중 오류가 발생했어요.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  });
+
+  // ── 메이트별 정산서 이미지(JPG) 생성 ───────────────────
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+
+  function sanitizeFileName(name) {
+    return String(name).replace(/[\\/:*?"<>|]/g, '_').trim() || '메이트';
+  }
+
+  function buildStatementCardHTML(mate, sessions, opts, payoutRatio) {
+    const n = sessions.length;
+    const wdLabel = SettleCore.uniqueWeekdaysLabel(sessions);
+    const summary = SettleCore.summarizeMate(sessions, opts, payoutRatio);
+
+    const rowsHtml = sessions.map((s, i) => {
+      const r = SettleCore.computeSessionRow(s, opts, payoutRatio);
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${escapeHtml(s.dateStr)}</td>
+        <td>${escapeHtml(s.dow)}</td>
+        <td class="left">${escapeHtml(s.program)}</td>
+        <td>${s.count}</td>
+        <td>${r.revenue.toLocaleString('ko-KR')}</td>
+        <td>${r.cardFee.toLocaleString('ko-KR')}</td>
+        <td>${r.insurance.toLocaleString('ko-KR')}</td>
+        <td>${r.net.toLocaleString('ko-KR')}</td>
+        <td class="fee">${r.fee.toLocaleString('ko-KR')}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="statement-card">
+        <div class="stmt-title">${escapeHtml(opts.titlePrefix)} ${escapeHtml(opts.programName)} 프로그램 메이트 용역비 정산서</div>
+        <div class="stmt-org">"${escapeHtml(opts.orgName)}"</div>
+        <div class="stmt-meta"><span class="b">메이트 명 : ${escapeHtml(mate)}</span><span>일자 : ${escapeHtml(opts.issueDateKR)}</span></div>
+
+        <div class="stmt-section-title">■ 용역수수료 정산 기준</div>
+        <div class="stmt-desc-box">수수료 = 회당 총매출액(결제 내역 정산기준금액 합계)에서 판매관리비(카드수수료 ${(opts.cardFeeRate * 100).toFixed(2)}% 및 보험료)를 공제한 금액 중 ${(payoutRatio * 100).toFixed(0)}%(메이트 등급별 지급비율)를 회당 용역 수수료로 산정하여 지급한다.</div>
+
+        <div class="stmt-params">
+          <div class="param"><div class="plabel">카드<br>수수료율</div><div class="pvalue">${(opts.cardFeeRate * 100).toFixed(2)}%</div></div>
+          <div class="param"><div class="plabel">인당<br>보험료</div><div class="pvalue">${opts.insurancePerPerson.toLocaleString('ko-KR')}</div></div>
+          <div class="param"><div class="plabel">용역비<br>지급비율</div><div class="pvalue">${(payoutRatio * 100).toFixed(2)}%</div></div>
+        </div>
+
+        <div class="stmt-section-bar">① 메이트 정산 내역 — ${escapeHtml(wdLabel)} 총 ${n}회</div>
+        <table class="stmt-table">
+          <thead><tr>
+            <th>연번</th><th>운영일자</th><th>요일</th><th>프로그램명</th><th>참여인원</th>
+            <th>총매출액(원)</th><th>카드수수료(원)</th><th>보험료(원)</th><th>공제후금액(원)</th><th>용역수수료(원)</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+          <tfoot>
+            <tr class="subtotal">
+              <td colspan="4">소계</td>
+              <td>${summary.totalPeople}</td>
+              <td>${summary.totalRevenue.toLocaleString('ko-KR')}</td>
+              <td>${summary.totalCardFee.toLocaleString('ko-KR')}</td>
+              <td>${summary.totalInsurance.toLocaleString('ko-KR')}</td>
+              <td>${summary.totalNet.toLocaleString('ko-KR')}</td>
+              <td>${summary.totalFee.toLocaleString('ko-KR')}</td>
+            </tr>
+            <tr class="total">
+              <td colspan="4">총 합계 (${n}회)</td>
+              <td>${summary.totalPeople}</td>
+              <td>${summary.totalRevenue.toLocaleString('ko-KR')}</td>
+              <td>${summary.totalCardFee.toLocaleString('ko-KR')}</td>
+              <td>${summary.totalInsurance.toLocaleString('ko-KR')}</td>
+              <td>${summary.totalNet.toLocaleString('ko-KR')}</td>
+              <td>${summary.totalFee.toLocaleString('ko-KR')}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="stmt-section-title">■ 안내사항</div>
+        <div class="stmt-guide-box">
+          · 총매출액 = 해당 회차 참여자 결제 내역(정산기준금액)의 합계 — 원본 데이터 그대로 반영되며 프로그램별 판매가 차이가 자동으로 반영됩니다.<br>
+          · 공제후금액 = 총매출액 - 카드수수료(${(opts.cardFeeRate * 100).toFixed(2)}%) - 보험료(인당 ${opts.insurancePerPerson.toLocaleString('ko-KR')}원)<br>
+          · 용역수수료 = 공제후금액 × ${(payoutRatio * 100).toFixed(0)}% (메이트 등급별 지급비율)
+        </div>
+
+        <div class="stmt-footer">발행일: ${escapeHtml(opts.issueDateKR)}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;발행: ${escapeHtml(opts.issuerName)}</div>
+      </div>
+    `;
+  }
+
+  async function generateStatementImageBlobs(data, opts, onProgress) {
+    const host = $('imageRenderHost');
+    const mateNames = Array.from(data.byMate.keys());
+    const results = [];
+    for (let i = 0; i < mateNames.length; i++) {
+      const mate = mateNames[i];
+      const sessions = data.byMate.get(mate);
+      const payoutRatio = SettleCore.getMateRatio(mate, opts);
+      host.innerHTML = buildStatementCardHTML(mate, sessions, opts, payoutRatio);
+      if (onProgress) onProgress(i + 1, mateNames.length, mate);
+      // 레이아웃이 안정된 뒤 캡처하도록 잠시 대기 (requestAnimationFrame 미지원 환경은 setTimeout으로 대체)
+      const raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (cb) => setTimeout(cb, 16);
+      await new Promise((r) => raf(() => raf(r)));
+      const target = host.firstElementChild;
+      const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+      results.push({ mate, blob });
+    }
+    host.innerHTML = '';
+    return results;
+  }
+
+  $('downloadImagesBtn').addEventListener('click', async () => {
+    if (!lastData || !lastOpts) return;
+    const btn = $('downloadImagesBtn');
+    const original = btn.innerHTML;
+    const status = $('imageDownloadStatus');
+    btn.disabled = true;
+    status.className = 'status-line';
+    try {
+      const images = await generateStatementImageBlobs(lastData, lastOpts, (done, total, mate) => {
+        btn.textContent = `이미지 생성 중… (${done}/${total} · ${mate})`;
+        status.textContent = '';
+      });
+
+      const zip = new JSZip();
+      const usedNames = new Set();
+      images.forEach(({ mate, blob }) => {
+        let base = sanitizeFileName(mate);
+        let name = `${base}_정산서.jpg`;
+        let i = 2;
+        while (usedNames.has(name)) { name = `${base}_정산서(${i}).jpg`; i++; }
+        usedNames.add(name);
+        zip.file(name, blob);
+      });
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const prefix = lastOpts.titlePrefix ? lastOpts.titlePrefix.replace(/\s+/g, '') + '_' : '';
+      downloadBlob(zipBlob, `${prefix}메이트별_정산서_이미지.zip`);
+      status.textContent = `이미지 ${images.length}장을 압축 파일로 내려받았어요.`;
+      status.className = 'status-line ok';
+    } catch (err) {
+      console.error(err);
+      status.textContent = '이미지를 만드는 중 오류가 발생했어요.';
+      status.className = 'status-line err';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  });
+
+  setStep(0);
+})();
+
+</script>
+</body>
+</html>
