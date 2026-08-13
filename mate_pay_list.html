@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>메이트 별 정산 리스트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F3ED;
+    --surface:#FFFFFF;
+    --ink:#1E2A21;
+    --ink-soft:#5B6B5E;
+    --primary:#35543F;
+    --primary-dark:#243B2C;
+    --primary-soft:#E7EEE7;
+    --accent:#8A6D3B;
+    --accent-soft:#F3ECDC;
+    --danger:#B3452F;
+    --danger-soft:#F7E7E2;
+    --border:#DDD8CC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:48px 24px 96px;
+  }
+
+  /* ---- header ---- */
+  header{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-bottom:8px;
+  }
+  .ridge-mark{ flex:none; }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:26px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    color:var(--ink-soft);
+    font-size:14.5px;
+    margin:6px 0 0 60px;
+  }
+
+  .ridge-divider{ width:100%; height:14px; margin:32px 0; opacity:0.55; }
+  .inner-divider{ border-top:1px solid var(--border); margin:28px 0 22px; }
+
+  /* ---- card ---- */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:28px;
+    margin-bottom:24px;
+  }
+  .card h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin:0 0 4px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .step-num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:20px;height:20px;
+    border-radius:50%;
+    background:var(--primary);
+    color:#fff;
+    font-size:11px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .card p.desc{
+    color:var(--ink-soft);
+    font-size:13.5px;
+    margin:0 0 18px;
+  }
+
+  /* ---- dropzone ---- */
+  .dropzone{
+    border:1.5px dashed var(--border);
+    border-radius:12px;
+    padding:36px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    background:var(--bg);
+  }
+  .dropzone.drag{
+    border-color:var(--primary);
+    background:var(--primary-soft);
+  }
+  .dropzone .dz-icon{ margin-bottom:10px; }
+  .dropzone .dz-title{ font-weight:600; font-size:14.5px; }
+  .dropzone .dz-hint{ color:var(--ink-soft); font-size:12.5px; margin-top:4px; }
+  input[type=file]{ display:none; }
+
+  .file-chip{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--primary-soft);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:13.5px;
+  }
+  .file-chip .name{ font-weight:600; }
+  .file-chip button{
+    background:none;border:none;color:var(--ink-soft);cursor:pointer;
+    font-size:12.5px; text-decoration:underline;
+  }
+
+  /* ---- summary stats ---- */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-top:18px;
+  }
+  .stat{
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    background:var(--bg);
+  }
+  .stat .num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;
+    font-weight:600;
+  }
+  .stat .label{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .stat.ok .num{ color:var(--primary); }
+  .stat.warn .num{ color:var(--danger); }
+
+  /* ---- table ---- */
+  .table-scroll{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+    margin-top:18px;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:860px;
+    font-size:13px;
+  }
+  thead th{
+    background:var(--primary-dark);
+    color:#fff;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    text-align:left;
+    padding:10px 12px;
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:9px 12px;
+    border-top:1px solid var(--border);
+    white-space:nowrap;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+  }
+  tbody td.text{ font-family:'Inter',sans-serif; font-size:13px; }
+  tbody tr:nth-child(even){ background:#FBFAF7; }
+  tbody tr.unmatched{ background:var(--danger-soft); }
+  .badge{
+    display:inline-block;
+    font-family:'Inter',sans-serif;
+    font-size:11px;
+    font-weight:600;
+    padding:2px 7px;
+    border-radius:20px;
+  }
+  .badge.warn{ background:var(--danger); color:#fff; }
+  .badge.ok{ background:var(--primary); color:#fff; }
+
+  .more-rows{
+    text-align:center;
+    padding:10px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--border);
+  }
+
+  /* ---- actions ---- */
+  .actions{
+    display:flex;
+    gap:12px;
+    margin-top:22px;
+  }
+  button.primary{
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    border-radius:9px;
+    padding:12px 22px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  button.primary:hover{ background:var(--primary-dark); }
+  button.primary:disabled{ background:#B9C2BB; cursor:not-allowed; }
+  button.ghost{
+    background:none;
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:12px 18px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  button.ghost:hover{ border-color:var(--ink-soft); color:var(--ink); }
+
+  .note{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    line-height:1.6;
+  }
+  .note b{ color:var(--ink); }
+
+  footer{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:12px;
+    margin-top:8px;
+  }
+
+  @media (max-width:600px){
+    .subtitle{ margin-left:0; }
+    header{ flex-direction:column; align-items:flex-start; }
+    .stats{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <svg class="ridge-mark" width="44" height="44" viewBox="0 0 44 44" fill="none">
+      <path d="M2 32 L12 18 L18 26 L26 10 L36 28 L42 22" stroke="#35543F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <h1>메이트 별 정산 리스트</h1>
+  </header>
+  <p class="subtitle">네이버 정산 내역 엑셀 파일을, 메이트 별 정산 내역으로 재가공합니다</p>
+
+  <svg class="ridge-divider" viewBox="0 0 960 14" preserveAspectRatio="none">
+    <path d="M0 12 L60 4 L120 12 L180 2 L240 12 L300 6 L360 12 L420 3 L480 12 L540 5 L600 12 L660 4 L720 12 L780 6 L840 12 L900 3 L960 12" stroke="#8A6D3B" stroke-width="1.4" fill="none"/>
+  </svg>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="card">
+    <h2><span class="step-num">1</span> 원본 엑셀 업로드</h2>
+    <p class="desc">정산기준금액(A), Npay 수수료(B), 매출연동 수수료 합계(C), 무이자할부 수수료(D) 열이 포함된 네이버페이 정산 파일(.xlsx)을 올려주세요.</p>
+
+    <div id="dropzone" class="dropzone">
+      <div class="dz-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M12 3v12M12 3l-4 4M12 3l4 4M4 21h16" stroke="#35543F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="dz-title">클릭하거나 파일을 끌어다 놓으세요</div>
+      <div class="dz-hint">.xlsx / .xls 파일 1개</div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    </div>
+
+    <div id="fileChip" style="display:none;margin-top:14px;"></div>
+  </div>
+
+  <!-- STEP 2: RESULT -->
+  <div class="card" id="resultCard" style="display:none;">
+    <h2><span class="step-num">2</span> 변환 결과 확인</h2>
+    <p class="desc">아래는 변환된 표의 미리보기입니다. 형식이 맞지 않아 자동으로 읽지 못한 행은 빨간색으로 표시됩니다.</p>
+
+    <div class="stats">
+      <div class="stat"><div class="num" id="statTotal">0</div><div class="label">원본 행 수</div></div>
+      <div class="stat ok"><div class="num" id="statOk">0</div><div class="label">변환 성공</div></div>
+      <div class="stat warn"><div class="num" id="statWarn">0</div><div class="label">확인 필요</div></div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>운영일자</th><th>요일</th><th>프로그램 명</th><th>메이트 명</th><th>회차</th><th>구매자 명</th><th>참가여부</th>
+            <th>정산기준금액(A)</th><th>Npay 수수료(B)</th><th>매출연동 수수료 합계(C)</th><th>무이자할부 수수료(D)</th>
+          </tr>
+        </thead>
+        <tbody id="previewBody"></tbody>
+      </table>
+      <div class="more-rows" id="moreRows" style="display:none;"></div>
+    </div>
+
+    <p class="note" id="warnNote" style="display:none;">
+      <b>확인 필요</b>한 행은 상품명 문구가 <code>M/D(요일) 프로그램명 / 메이트명쌤 회차</code> 형식과 달라서 자동으로 나누지 못한 행이에요. 다운로드된 파일에는 원문 그대로 <b>프로그램 명</b> 칸에 들어가니, 필요하면 엑셀에서 직접 나눠주세요.
+    </p>
+
+    <div class="inner-divider"></div>
+
+    <h2><span class="step-num">3</span> 실제 참가자 명단 업로드 (선택)</h2>
+    <p class="desc">정산 내역에는 있지만 실제로 참가하지 않은 사람은 <b>메이트 별 실적</b> 합산에서 제외해요. <b>운영일자</b>, <b>메이트 명</b>(또는 프로그램 명), <b>참가자 명단</b>(한 셀에 "1.이름" 형식으로 줄바꿈 나열) 열이 있어야 해요.</p>
+
+    <div id="attendanceDropzone" class="dropzone" style="padding:24px 20px;">
+      <div class="dz-title">클릭하거나 파일을 끌어다 놓으세요</div>
+      <div class="dz-hint">.xlsx / .xls 파일 1개 · 올리지 않으면 전체 인원을 참가로 간주해요</div>
+      <input type="file" id="attendanceInput" accept=".xlsx,.xls">
+    </div>
+    <div id="attendanceChip" style="display:none;margin-top:14px;"></div>
+
+    <div class="stats" id="attendanceStats" style="display:none;margin-top:18px;">
+      <div class="stat ok"><div class="num" id="statAttendY">0</div><div class="label">참가 처리</div></div>
+      <div class="stat warn"><div class="num" id="statAttendN">0</div><div class="label">불참 처리 (실적 제외)</div></div>
+      <div class="stat"><div class="num" id="statAttendUnmatched">0</div><div class="label">명단에서만 확인됨</div></div>
+    </div>
+
+    <p class="note" id="attendanceWarnNote" style="display:none;"></p>
+
+    <div class="inner-divider"></div>
+
+    <div class="actions">
+      <button class="primary" id="downloadBtn">변환된 엑셀 다운로드</button>
+      <button class="ghost" id="resetBtn">새 파일로 다시 시작</button>
+    </div>
+  </div>
+
+  <footer>업로드한 파일은 브라우저 안에서만 처리되며, 서버로 전송되지 않습니다.</footer>
+</div>
+
+<script>
+(function(){
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const fileChip = document.getElementById('fileChip');
+  const resultCard = document.getElementById('resultCard');
+  const previewBody = document.getElementById('previewBody');
+  const moreRows = document.getElementById('moreRows');
+  const statTotal = document.getElementById('statTotal');
+  const statOk = document.getElementById('statOk');
+  const statWarn = document.getElementById('statWarn');
+  const warnNote = document.getElementById('warnNote');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  const attendanceDropzone = document.getElementById('attendanceDropzone');
+  const attendanceInput = document.getElementById('attendanceInput');
+  const attendanceChip = document.getElementById('attendanceChip');
+  const attendanceStats = document.getElementById('attendanceStats');
+  const statAttendY = document.getElementById('statAttendY');
+  const statAttendN = document.getElementById('statAttendN');
+  const statAttendUnmatched = document.getElementById('statAttendUnmatched');
+  const attendanceWarnNote = document.getElementById('attendanceWarnNote');
+
+  let attendeeIndex = null;       // key -> Set(참가자 이름)
+  let attendeeGroupType = null;   // 'mate' | 'program'
+  let attendeeHasRound = false;
+  let attendeeRecords = [];       // 원본 참가자 레코드 (매칭 실패 확인용)
+  let attendanceFileName = '';
+
+  let convertedRows = []; // full result, for export
+  let currentFileName = '';
+
+  const OUT_HEADERS = ['운영일자','요일','프로그램 명','메이트 명','회차','구매자 명','참가여부','정산기준금액(A)','Npay 수수료(B)','매출연동 수수료 합계(C)','무이자할부 수수료(D)'];
+
+  // ---------- upload interactions ----------
+  dropzone.addEventListener('click', () => fileInput.click());
+  ['dragenter','dragover'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.add('drag'); });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); });
+  });
+  dropzone.addEventListener('drop', e=>{
+    const f = e.dataTransfer.files[0];
+    if(f) handleFile(f);
+  });
+  fileInput.addEventListener('change', e=>{
+    const f = e.target.files[0];
+    if(f) handleFile(f);
+  });
+  resetBtn.addEventListener('click', ()=>{
+    convertedRows = [];
+    fileInput.value = '';
+    fileChip.style.display = 'none';
+    resultCard.style.display = 'none';
+
+    attendeeIndex = null;
+    attendeeRecords = [];
+    attendanceFileName = '';
+    attendanceInput.value = '';
+    attendanceChip.style.display = 'none';
+    attendanceStats.style.display = 'none';
+    attendanceWarnNote.style.display = 'none';
+  });
+
+  function handleFile(file){
+    currentFileName = file.name;
+    fileChip.style.display = 'block';
+    fileChip.innerHTML = '';
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    chip.innerHTML = '<span class="name">📄 '+escapeHtml(file.name)+'</span>';
+    const btn = document.createElement('button');
+    btn.textContent = '다른 파일 선택';
+    btn.addEventListener('click', ()=> fileInput.click());
+    chip.appendChild(btn);
+    fileChip.appendChild(chip);
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:'array'});
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+        processRows(rows);
+      }catch(err){
+        alert('파일을 읽는 중 문제가 생겼어요. 엑셀 파일(.xlsx)이 맞는지 확인해주세요.\n('+err.message+')');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // ---------- parsing ----------
+  function normalize(s){ return (s||'').toString().trim(); }
+
+  function findHeaderRow(rows){
+    for(let i=0;i<Math.min(rows.length,10);i++){
+      const row = rows[i].map(normalize);
+      if(row.some(c => c.includes('상품명')) && row.some(c => c.includes('정산기준금액'))){
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  function findCol(headerRow, keyword){
+    for(let i=0;i<headerRow.length;i++){
+      if(normalize(headerRow[i]).includes(keyword)) return i;
+    }
+    return -1;
+  }
+
+  // "6/11(목) 민낯여성산악회 스스스 / 최윤선쌤 2회차" 형태 파싱
+  const NAME_RE = /^(\d{1,2}\/\d{1,2})\s*\(([^)]{1})\)\s*(.+?)\s*\/\s*(.+?)쌤\s*(.+)$/;
+
+  function parseProductName(raw){
+    const text = normalize(raw);
+    const m = text.match(NAME_RE);
+    if(!m) return null;
+    return {
+      date: m[1],
+      weekday: m[2],
+      program: m[3].trim(),
+      mate: m[4].trim(),
+      round: m[5].trim()
+    };
+  }
+
+  function toNumber(v){
+    if(typeof v === 'number') return v;
+    const n = parseFloat((v||'').toString().replace(/,/g,''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function processRows(rows){
+    const headerIdx = findHeaderRow(rows);
+    if(headerIdx === -1){
+      alert('업로드한 파일에서 "상품명", "정산기준금액(A)" 같은 열 제목을 찾지 못했어요. 원본 정산 엑셀 형식인지 확인해주세요.');
+      return;
+    }
+    const headerRow = rows[headerIdx];
+    const colName = findCol(headerRow, '상품명');
+    const colA = findCol(headerRow, '정산기준금액');
+    const colB = findCol(headerRow, 'Npay 수수료');
+    const colC = findCol(headerRow, '매출연동 수수료');
+    const colD = findCol(headerRow, '무이자할부 수수료');
+    const colBuyer = findCol(headerRow, '구매자명');
+
+    if(colName === -1 || colA === -1){
+      alert('필요한 열(상품명, 정산기준금액(A))을 찾지 못했어요. 원본 정산 엑셀 형식인지 확인해주세요.');
+      return;
+    }
+
+    const dataRows = rows.slice(headerIdx+1);
+    const results = [];
+
+    dataRows.forEach(r=>{
+      const nameRaw = normalize(r[colName]);
+      if(!nameRaw) return; // 빈 행은 건너뜀
+
+      const parsed = parseProductName(nameRaw);
+      const A = colA>-1 ? toNumber(r[colA]) : 0;
+      const B = colB>-1 ? toNumber(r[colB]) : 0;
+      const C = colC>-1 ? toNumber(r[colC]) : 0;
+      const D = colD>-1 ? toNumber(r[colD]) : 0;
+      const buyer = colBuyer>-1 ? normalize(r[colBuyer]) : '';
+
+      if(parsed){
+        results.push({
+          운영일자: parsed.date,
+          요일: parsed.weekday,
+          '프로그램 명': parsed.program,
+          '메이트 명': parsed.mate,
+          회차: parsed.round,
+          '구매자 명': buyer,
+          '참가여부': '',
+          '정산기준금액(A)': A,
+          'Npay 수수료(B)': B,
+          '매출연동 수수료 합계(C)': C,
+          '무이자할부 수수료(D)': D,
+          _unmatched: false
+        });
+      }else{
+        results.push({
+          운영일자: '',
+          요일: '',
+          '프로그램 명': nameRaw,
+          '메이트 명': '',
+          회차: '',
+          '구매자 명': buyer,
+          '참가여부': '',
+          '정산기준금액(A)': A,
+          'Npay 수수료(B)': B,
+          '매출연동 수수료 합계(C)': C,
+          '무이자할부 수수료(D)': D,
+          _unmatched: true
+        });
+      }
+    });
+
+    convertedRows = results;
+    if(attendeeIndex){
+      runAttendanceMatch();
+    }else{
+      renderResult(results);
+    }
+  }
+
+  // ---------- 참가자 명단 업로드 & 매칭 ----------
+  attendanceDropzone.addEventListener('click', () => attendanceInput.click());
+  ['dragenter','dragover'].forEach(evt=>{
+    attendanceDropzone.addEventListener(evt, e=>{ e.preventDefault(); attendanceDropzone.classList.add('drag'); });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    attendanceDropzone.addEventListener(evt, e=>{ e.preventDefault(); attendanceDropzone.classList.remove('drag'); });
+  });
+  attendanceDropzone.addEventListener('drop', e=>{
+    const f = e.dataTransfer.files[0];
+    if(f) handleAttendanceFile(f);
+  });
+  attendanceInput.addEventListener('change', e=>{
+    const f = e.target.files[0];
+    if(f) handleAttendanceFile(f);
+  });
+
+  function handleAttendanceFile(file){
+    attendanceFileName = file.name;
+    attendanceChip.style.display = 'block';
+    attendanceChip.innerHTML = '';
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    chip.innerHTML = '<span class="name">📋 '+escapeHtml(file.name)+'</span>';
+    const btn = document.createElement('button');
+    btn.textContent = '다른 파일 선택';
+    btn.addEventListener('click', ()=> attendanceInput.click());
+    chip.appendChild(btn);
+    attendanceChip.appendChild(chip);
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:'array'});
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+        const parsed = parseAttendeeRows(rows);
+        if(!parsed){
+          alert('참가자 명단에서 "운영일자"와 "이름"(성명/참가자) 열을 찾지 못했어요. 열 이름을 확인해주세요.');
+          return;
+        }
+        attendeeRecords = parsed.records;
+        attendeeGroupType = parsed.groupType;
+        attendeeHasRound = parsed.hasRound;
+        attendeeIndex = buildAttendeeIndex(attendeeRecords, attendeeHasRound);
+        runAttendanceMatch();
+      }catch(err){
+        alert('참가자 명단 파일을 읽는 중 문제가 생겼어요.\n('+err.message+')');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function findColAny(headerRow, keywords){
+    for(let i=0;i<headerRow.length;i++){
+      const h = normalize(headerRow[i]);
+      if(keywords.some(k => h.includes(k))) return i;
+    }
+    return -1;
+  }
+
+  function findAttendeeHeaderRow(rows){
+    for(let i=0;i<Math.min(rows.length,10);i++){
+      const row = rows[i].map(normalize);
+      const hasDate = row.some(c => c.includes('운영일자') || c.includes('날짜') || c.includes('일자'));
+      const hasName = row.some(c => c.includes('이름') || c.includes('성명') || c.includes('참가자'));
+      if(hasDate && hasName) return i;
+    }
+    return -1;
+  }
+
+  // 엑셀 날짜 셀은 순수 숫자(일련번호)로 들어오는 게 보통이며, 이 경로는 시간대 영향이 없음.
+  // Date 객체가 들어오는 경우(드묾)는 방어적으로만 처리.
+  function toMonthDay(value){
+    if(typeof value === 'number'){
+      try{
+        const dc = XLSX.SSF.parse_date_code(value);
+        if(dc && dc.m && dc.d) return dc.m + '/' + dc.d;
+      }catch(e){ /* fall through */ }
+    }
+    if(value instanceof Date && !isNaN(value)){
+      return (value.getMonth()+1) + '/' + value.getDate();
+    }
+    const s = normalize(value);
+    let m = s.match(/^(\d{1,2})\/(\d{1,2})$/);
+    if(m) return parseInt(m[1],10) + '/' + parseInt(m[2],10);
+    m = s.match(/^\d{4}[-.\/](\d{1,2})[-.\/](\d{1,2})/);
+    if(m) return parseInt(m[1],10) + '/' + parseInt(m[2],10);
+    m = s.match(/^(\d{1,2})[-.](\d{1,2})$/);
+    if(m) return parseInt(m[1],10) + '/' + parseInt(m[2],10);
+    return s;
+  }
+
+  // 참가자 명단: 운영일자 + (메이트 명 또는 프로그램 명) + [회차] + 참가자 명단(한 셀에 줄바꿈으로 여러 명)
+  function splitNames(text){
+    return text
+      .split(/\r?\n|,|、/)
+      .map(s => {
+        const stripped = s.replace(/^\s*\d+[\.\)\-]?\s*/, ''); // "1.김주희" 같은 번호 매김 제거
+        const m = stripped.match(/[가-힣]+/); // 뒤에 숫자·지역명·기호가 붙어도 맨 앞 한글 덩어리만 이름으로 인정
+        return (m ? m[0] : stripped).trim();
+      })
+      .filter(Boolean);
+  }
+
+  function parseAttendeeRows(rows){
+    const headerIdx = findAttendeeHeaderRow(rows);
+    if(headerIdx === -1) return null;
+    const headerRow = rows[headerIdx];
+
+    const colDate = findColAny(headerRow, ['운영일자','날짜','일자']);
+    const colMate = findColAny(headerRow, ['메이트']);
+    const colProgram = findColAny(headerRow, ['프로그램']);
+    const groupType = colMate > -1 ? 'mate' : 'program';
+    const colGroup = colMate > -1 ? colMate : colProgram;
+    const colRound = findColAny(headerRow, ['회차']);
+    const colNames = findColAny(headerRow, ['참가자','이름','성명']);
+
+    if(colDate === -1 || colGroup === -1 || colNames === -1) return null;
+
+    const hasRound = colRound > -1;
+    const records = [];
+    // 병합된 셀 등으로 운영일자/메이트 명이 빈 값인 행은 바로 위 값을 그대로 이어받음
+    let lastDate = '', lastGroup = '', lastRound = '';
+
+    rows.slice(headerIdx+1).forEach(r=>{
+      const dateVal = toMonthDay(r[colDate]);
+      const groupVal = normalize(r[colGroup]);
+      const roundVal = hasRound ? normalize(r[colRound]) : '';
+      if(dateVal) lastDate = dateVal;
+      if(groupVal) lastGroup = groupVal;
+      if(roundVal) lastRound = roundVal;
+
+      const namesText = (r[colNames] || '').toString();
+      if(!namesText.trim() || !lastDate) return;
+
+      splitNames(namesText).forEach(name=>{
+        records.push({ date: lastDate, group: lastGroup, round: hasRound ? lastRound : '', name });
+      });
+    });
+    return {records, groupType, hasRound};
+  }
+
+  function buildSessionKey(date, group, round, hasRound){
+    date = normalize(date); group = normalize(group);
+    return hasRound ? [date, group, normalize(round)].join('|') : [date, group].join('|');
+  }
+
+  function buildAttendeeIndex(records, hasRound){
+    const map = new Map();
+    records.forEach(rec=>{
+      const key = buildSessionKey(rec.date, rec.group, rec.round, hasRound);
+      if(!map.has(key)) map.set(key, new Set());
+      map.get(key).add(rec.name);
+    });
+    return map;
+  }
+
+  function runAttendanceMatch(){
+    if(convertedRows.length === 0) return;
+    const matchedKeys = new Set();
+
+    convertedRows.forEach(r=>{
+      if(r._unmatched || !normalize(r['운영일자']) || !normalize(r['메이트 명'])){
+        r['참가여부'] = ''; // 확인필요 행은 세션 정보가 없어 판단 불가
+        return;
+      }
+      const group = attendeeGroupType === 'mate' ? r['메이트 명'] : r['프로그램 명'];
+      const key = buildSessionKey(r['운영일자'], group, r['회차'], attendeeHasRound);
+      const set = attendeeIndex.get(key);
+      const buyer = normalize(r['구매자 명']);
+      if(set && buyer && set.has(buyer)){
+        r['참가여부'] = 'Y';
+        matchedKeys.add(key + '::' + buyer);
+      }else{
+        r['참가여부'] = 'N';
+      }
+    });
+
+    // 명단에는 있지만 정산 내역에서 같은 이름을 찾지 못한 경우 (오타/누락 확인용)
+    const unmatchedAttendees = attendeeRecords.filter(rec=>{
+      const key = buildSessionKey(rec.date, rec.group, rec.round, attendeeHasRound);
+      return !matchedKeys.has(key + '::' + rec.name);
+    });
+
+    attendanceStats.style.display = 'grid';
+    statAttendY.textContent = convertedRows.filter(r=>r['참가여부']==='Y').length;
+    statAttendN.textContent = convertedRows.filter(r=>r['참가여부']==='N').length;
+    statAttendUnmatched.textContent = unmatchedAttendees.length;
+
+    if(unmatchedAttendees.length > 0){
+      const sample = unmatchedAttendees.slice(0,15).map(u=>`${u.date} ${u.group} ${u.name}`).join(', ');
+      attendanceWarnNote.style.display = 'block';
+      attendanceWarnNote.innerHTML = `<b>확인 필요:</b> 참가자 명단에는 있지만 정산 내역에서 같은 이름을 찾지 못한 경우가 ${unmatchedAttendees.length}건 있어요. 이름 표기가 다르거나(오타·별명) 정산 내역 자체에 빠져 있을 수 있어요. 예: ${escapeHtml(sample)}${unmatchedAttendees.length>15 ? ' 외...' : ''}`;
+    }else{
+      attendanceWarnNote.style.display = 'none';
+    }
+
+    renderResult(convertedRows);
+  }
+
+  // ---------- render ----------
+  function escapeHtml(s){
+    return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderResult(results){
+    resultCard.style.display = 'block';
+    const okCount = results.filter(r=>!r._unmatched).length;
+    const warnCount = results.filter(r=>r._unmatched).length;
+
+    statTotal.textContent = results.length;
+    statOk.textContent = okCount;
+    statWarn.textContent = warnCount;
+    warnNote.style.display = warnCount>0 ? 'block' : 'none';
+
+    previewBody.innerHTML = '';
+    const PREVIEW_LIMIT = 30;
+    results.slice(0, PREVIEW_LIMIT).forEach(r=>{
+      const tr = document.createElement('tr');
+      if(r._unmatched) tr.className = 'unmatched';
+      tr.innerHTML = `
+        <td class="text">${escapeHtml(r['운영일자'])}</td>
+        <td class="text">${escapeHtml(r['요일'])}</td>
+        <td class="text">${escapeHtml(r['프로그램 명'])}${r._unmatched ? ' <span class="badge warn">확인필요</span>' : ''}</td>
+        <td class="text">${escapeHtml(r['메이트 명'])}</td>
+        <td class="text">${escapeHtml(r['회차'])}</td>
+        <td class="text">${escapeHtml(r['구매자 명'])}</td>
+        <td class="text">${r['참가여부']==='Y' ? '<span class="badge ok">참가</span>' : (r['참가여부']==='N' ? '<span class="badge warn">불참</span>' : '-')}</td>
+        <td>${r['정산기준금액(A)'].toLocaleString()}</td>
+        <td>${r['Npay 수수료(B)'].toLocaleString()}</td>
+        <td>${r['매출연동 수수료 합계(C)'].toLocaleString()}</td>
+        <td>${r['무이자할부 수수료(D)'].toLocaleString()}</td>
+      `;
+      previewBody.appendChild(tr);
+    });
+
+    if(results.length > PREVIEW_LIMIT){
+      moreRows.style.display = 'block';
+      moreRows.textContent = `외 ${results.length - PREVIEW_LIMIT}개 행 (다운로드 파일에는 전체 포함)`;
+    }else{
+      moreRows.style.display = 'none';
+    }
+  }
+
+  // ---------- download ----------
+  const COL_WIDTHS = [{wch:9},{wch:6},{wch:26},{wch:12},{wch:9},{wch:12},{wch:9},{wch:14},{wch:13},{wch:16},{wch:14}];
+  const SUMMARY_HEADERS = ['운영일자','메이트 명','구매자 명수','정산기준금액(A)','Npay 수수료(B)','매출연동 수수료 합계(C)','무이자할부 수수료(D)'];
+  const SUMMARY_COL_WIDTHS = [{wch:9},{wch:12},{wch:11},{wch:14},{wch:13},{wch:16},{wch:14}];
+
+  function toExportRows(list, headers){
+    return list.map(r=>{
+      const o = {};
+      headers.forEach(h=> o[h] = r[h]);
+      return o;
+    });
+  }
+
+  function addSheet(wb, list, name, headers, colWidths){
+    headers = headers || OUT_HEADERS;
+    colWidths = colWidths || COL_WIDTHS;
+    const ws = XLSX.utils.json_to_sheet(toExportRows(list, headers), {header:headers});
+    ws['!cols'] = colWidths;
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  }
+
+  // 날짜 문자열 "M/D"를 정렬용 숫자로 변환 (7~12월은 올해, 1~6월은 다음해로 취급해 실제 시간 흐름에 맞춤)
+  function dateSortKey(md){
+    const m = (md||'').split('/');
+    if(m.length !== 2) return 9999;
+    const month = parseInt(m[0],10), day = parseInt(m[1],10);
+    if(isNaN(month) || isNaN(day)) return 9999;
+    return month * 100 + day;
+  }
+
+  // 운영일자 + 메이트 명 + 프로그램 명 + 회차 기준으로 묶어 회차별 실적을 합산
+  function buildMateSummary(rows){
+    const groups = new Map();
+    rows.forEach(r=>{
+      if(r._unmatched || !normalize(r['메이트 명']) || !normalize(r['운영일자'])) return;
+      if(r['참가여부'] === 'N') return; // 불참자는 용역비 실적에서 제외
+      const key = [r['운영일자'], r['메이트 명'], r['프로그램 명'], r['회차']].join('|');
+      if(!groups.has(key)){
+        groups.set(key, {
+          운영일자: r['운영일자'],
+          '메이트 명': r['메이트 명'],
+          '구매자 명수': 0,
+          '정산기준금액(A)': 0,
+          'Npay 수수료(B)': 0,
+          '매출연동 수수료 합계(C)': 0,
+          '무이자할부 수수료(D)': 0
+        });
+      }
+      const g = groups.get(key);
+      g['구매자 명수'] += 1;
+      g['정산기준금액(A)'] += r['정산기준금액(A)'];
+      g['Npay 수수료(B)'] += r['Npay 수수료(B)'];
+      g['매출연동 수수료 합계(C)'] += r['매출연동 수수료 합계(C)'];
+      g['무이자할부 수수료(D)'] += r['무이자할부 수수료(D)'];
+    });
+
+    return Array.from(groups.values()).sort((a,b)=>{
+      const d = dateSortKey(a['운영일자']) - dateSortKey(b['운영일자']);
+      if(d !== 0) return d;
+      return a['메이트 명'].localeCompare(b['메이트 명'], 'ko');
+    });
+  }
+
+  // 엑셀 시트명 제한(31자, 특수문자 금지)에 맞게 정리 + 중복 시 번호 붙이기
+  function safeSheetName(name, used){
+    let base = (name || '이름없음').replace(/[:\\\/\?\*\[\]]/g, ' ').trim();
+    if(base.length > 31) base = base.slice(0,31);
+    let candidate = base;
+    let i = 2;
+    while(used.has(candidate)){
+      const suffix = '_' + i;
+      candidate = base.slice(0, 31 - suffix.length) + suffix;
+      i++;
+    }
+    used.add(candidate);
+    return candidate;
+  }
+
+  downloadBtn.addEventListener('click', ()=>{
+    if(convertedRows.length === 0) return;
+    const wb = XLSX.utils.book_new();
+    const usedNames = new Set();
+
+    // 1) 전체 시트
+    addSheet(wb, convertedRows, safeSheetName('전체', usedNames));
+
+    // 2) 메이트 별 실적 시트 (운영일자·메이트·프로그램·회차 기준 합산)
+    const summary = buildMateSummary(convertedRows);
+    if(summary.length > 0){
+      addSheet(wb, summary, safeSheetName('메이트 별 실적', usedNames), SUMMARY_HEADERS, SUMMARY_COL_WIDTHS);
+    }
+
+    // 3) 메이트 명별 상세 시트 (확인필요 행은 메이트명이 비어있으므로 별도 시트로)
+    const groups = new Map(); // mate name -> rows
+    const unmatched = [];
+    convertedRows.forEach(r=>{
+      if(r._unmatched || !normalize(r['메이트 명'])){
+        unmatched.push(r);
+        return;
+      }
+      const key = r['메이트 명'];
+      if(!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(r);
+    });
+
+    groups.forEach((list, mateName)=>{
+      addSheet(wb, list, safeSheetName(mateName, usedNames));
+    });
+
+    if(unmatched.length > 0){
+      addSheet(wb, unmatched, safeSheetName('확인필요', usedNames));
+    }
+
+    const base = currentFileName.replace(/\.[^/.]+$/, '') || '정산표';
+    XLSX.writeFile(wb, base + '_변환.xlsx');
+  });
+})();
+</script>
+</body>
+</html>
