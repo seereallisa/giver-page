@@ -3,76 +3,77 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>메이트 용역비 정산서 자동 변환 · 민낯여성산악회</title>
+<title>2단계: 메이트 지급내역서 출력 · 민낯여성산악회</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
-    --bg: #F6F3EA;
+    --bg: #F5F3ED;
     --paper: #FFFFFF;
-    --ink: #22301D;
-    --ink-soft: #5B6555;
+    --ink: #1E1E1A;
+    --ink-soft: #6B6B62;
     --forest: #3A5A40;
     --forest-deep: #22331F;
-    --line: #DDD6C4;
-    --gold: #C79A3E;
+    --line: #E1DDD0;
+    --gold: #B8A47C;
     --gold-soft: #F4EBD3;
     --danger: #B0402C;
-    --radius: 10px;
+    --radius: 12px;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; }
   body{
     background: var(--bg);
     background-image:
-      radial-gradient(circle at 8% 0%, rgba(58,90,64,0.06), transparent 40%),
-      radial-gradient(circle at 100% 30%, rgba(199,154,62,0.08), transparent 45%);
+      radial-gradient(circle at 8% 0%, rgba(58,90,64,0.05), transparent 40%),
+      radial-gradient(circle at 100% 30%, rgba(184,164,124,0.10), transparent 45%);
     color: var(--ink);
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
     line-height:1.55;
     min-height:100vh;
   }
-  .wrap{ max-width: 880px; margin:0 auto; padding: 40px 20px 90px; }
+  .wrap{ max-width: 880px; margin:0 auto; padding: 56px 20px 90px; }
 
   /* ── 헤더 ───────────────────────────────── */
-  header.hero{ margin-bottom: 34px; }
-  .eyebrow{
-    display:flex; align-items:center; gap:8px;
-    font-size:12.5px; letter-spacing:.14em; color: var(--forest);
-    font-weight:700; text-transform:uppercase; margin-bottom:10px;
-  }
-  .eyebrow svg{ width:16px; height:16px; }
+  header.hero{ margin-bottom: 30px; }
+  .hero-top{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+  .hero-top svg{ width:38px; height:38px; color: var(--ink); flex-shrink:0; }
   h1{
-    font-family:'Noto Serif KR', serif;
-    font-weight:700;
-    font-size: clamp(24px, 4vw, 32px);
-    margin: 0 0 10px;
-    color: var(--forest-deep);
+    font-family: inherit;
+    font-weight:800;
+    font-size: clamp(24px, 4vw, 30px);
+    margin: 0;
+    color: var(--ink);
+    letter-spacing:-.01em;
   }
-  header.hero p{ color: var(--ink-soft); margin:0; font-size:14.5px; max-width: 60ch; }
+  header.hero p{ color: var(--ink-soft); margin:0 0 6px; font-size:14.5px; max-width: 62ch; }
+  header.hero p b, header.hero p strong{ color: var(--ink); font-weight:700; }
+
+  /* ── 산 능선 구분선 ─────────────────────── */
+  .ridge{ display:block; width:100%; height:26px; margin: 30px 0 34px; color: var(--gold); }
 
   /* ── 트레일 스텝 표시 ───────────────────── */
   .trail{
-    display:flex; align-items:center; gap:0; margin: 30px 0 26px;
+    display:flex; align-items:center; gap:0; margin: 0 0 26px;
   }
   .trail .node{
     display:flex; align-items:center; gap:8px; flex-shrink:0;
   }
   .trail .dot{
-    width:26px; height:26px; border-radius:50%;
-    background: var(--paper); border:2px solid var(--forest);
-    color:var(--forest); font-weight:700; font-size:12.5px;
+    width:24px; height:24px; border-radius:50%;
+    background: var(--paper); border:1.5px solid var(--ink);
+    color:var(--ink); font-weight:700; font-size:12px;
     display:flex; align-items:center; justify-content:center;
   }
-  .trail .dot.done{ background:var(--forest); color:#fff; }
-  .trail .label{ font-size:13px; font-weight:700; color:var(--forest-deep); white-space:nowrap; }
+  .trail .dot.done{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .trail .label{ font-size:13px; font-weight:700; color:var(--ink); white-space:nowrap; }
   .trail .label.muted{ color:var(--ink-soft); font-weight:500; }
   .trail .path{
-    flex:1; height:0; border-top: 2px dashed var(--line); margin: 0 10px;
+    flex:1; height:0; border-top: 1.5px dashed var(--line); margin: 0 10px;
     min-width: 18px;
   }
 
@@ -81,19 +82,20 @@
     background: var(--paper);
     border:1px solid var(--line);
     border-radius: var(--radius);
-    padding: 26px 26px 24px;
+    padding: 28px 28px 26px;
     margin-bottom: 22px;
-    box-shadow: 0 1px 2px rgba(34,48,29,0.04);
+    box-shadow: 0 1px 3px rgba(30,30,26,0.05);
   }
   .card h2{
-    font-family:'Noto Serif KR', serif;
-    font-size:17px; margin:0 0 4px; color: var(--forest-deep);
-    display:flex; align-items:center; gap:8px;
+    font-family: inherit;
+    font-weight:800;
+    font-size:17px; margin:0 0 6px; color: var(--ink);
+    display:flex; align-items:center; gap:10px;
   }
   .card h2 .num{
     display:inline-flex; align-items:center; justify-content:center;
-    width:22px; height:22px; border-radius:50%; background:var(--gold-soft);
-    color:#8a6a1f; font-size:12px; font-weight:700;
+    width:24px; height:24px; border-radius:50%; background:var(--ink);
+    color:#fff; font-size:12.5px; font-weight:700; flex-shrink:0;
   }
   .card .desc{ color:var(--ink-soft); font-size:13px; margin: 0 0 18px; }
 
@@ -108,7 +110,7 @@
     background: #FBFAF5;
   }
   .dropzone:hover, .dropzone.drag{ border-color: var(--forest); background:#F3F6F0; }
-  .dropzone svg{ width:30px; height:30px; color:var(--forest); margin-bottom:8px; }
+  .dropzone svg{ width:26px; height:26px; color:var(--ink); margin-bottom:10px; }
   .dropzone .main{ font-weight:700; font-size:14px; color:var(--forest-deep); }
   .dropzone .sub{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
   input[type=file]{ display:none; }
@@ -257,13 +259,21 @@
 <div class="wrap">
 
   <header class="hero">
-    <div class="eyebrow">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l6-11 4 6 3-4 5 9H3z"/><circle cx="17" cy="6" r="2"/></svg>
-      메이트 정산 자동화
+    <div class="hero-top">
+      <svg viewBox="0 0 48 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 27L14 9l7 10 4-5.5L37 27H2z"/>
+        <circle cx="31" cy="8" r="2.6" fill="currentColor" stroke="none"/>
+      </svg>
+      <h1>2단계: 메이트 지급내역서 출력</h1>
     </div>
-    <h1>메이트 용역비 정산서 자동 변환</h1>
-    <p>네이버페이 결제 내역(정산 원본) 엑셀을 올리면, 메이트별로 시트를 나눠 용역비 정산서 양식으로 재가공한 엑셀 파일을 만들어 드립니다. 모든 계산은 수식으로 들어가 있어 다운로드 후에도 숫자를 직접 확인·수정할 수 있어요.</p>
+    <p>재가공된 '1단계 엑셀파일'을 업로드하세요.</p>
+    <p>모든 계산은 수식으로 들어가 있어 다운로드 후에도 숫자를 직접 확인·수정할 수 있어요.</p>
   </header>
+
+  <svg class="ridge" viewBox="0 0 800 24" preserveAspectRatio="none" aria-hidden="true">
+    <polyline points="0,18 25,7 50,18 75,4 100,16 125,9 150,20 175,6 200,17 225,10 250,19 275,5 300,15 325,11 350,20 375,7 400,17 425,9 450,19 475,6 500,16 525,10 550,20 575,7 600,17 625,9 650,19 675,5 700,15 725,11 750,20 775,7 800,18"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>
 
   <div class="trail">
     <div class="node"><div class="dot" id="dot1">1</div><div class="label" id="label1">파일 업로드</div></div>
@@ -275,11 +285,10 @@
 
   <!-- STEP 1 : 업로드 -->
   <section class="card">
-    <h2><span class="num">1</span> 결제 내역 엑셀 업로드</h2>
-    <p class="desc">"운영일자 / 요일 / 프로그램명 / 메이트명 / 참가여부" 등의 컬럼이 담긴 원본 정산 엑셀(.xlsx)을 올려주세요. 시트가 여러 개여도 그중 원본 데이터 시트를 자동으로 찾습니다.</p>
+    <h2><span class="num">1</span> 재가공 1단계 엑셀 업로드</h2>
 
     <div class="dropzone" id="dropzone">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 9l5-5 5 5"/><path d="M12 4v13"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4"/><path d="M6 10l6-6 6 6"/></svg>
       <div class="main">클릭하거나 파일을 끌어다 놓으세요</div>
       <div class="sub">.xlsx 파일 1개</div>
     </div>
@@ -379,6 +388,10 @@
       <button class="btn ghost" id="downloadImagesBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
         메이트별 정산서 이미지(JPG) 전체 다운로드
+      </button>
+      <button class="btn ghost" id="downloadPayrollBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6M9 16h6M9 8h1"/><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg>
+        세무대리인용 지급내역서 다운로드
       </button>
       <button class="btn ghost" id="backBtn">설정 다시 조정하기</button>
     </div>
@@ -869,6 +882,120 @@
     return wb;
   }
 
+  function fmtPayMonth(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr + 'T00:00:00');
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월`;
+  }
+
+  function fmtPayDate(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr + 'T00:00:00');
+    return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+  }
+
+  // 세무대리인에게 전달할 "메이트 용역비 지급내역서" — 성명/구분/주민등록번호/은행계좌/지급총액 등 인적사항 포함
+  function buildPayrollWorkbook(ExcelJS, data, opts) {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = '민낯여성산악회 정산 자동화';
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet('지급내역서', { views: [{ showGridLines: false }] });
+    ws.columns = [
+      { width: 2.5 }, { width: 7 }, { width: 12 }, { width: 12 }, { width: 17 },
+      { width: 28 }, { width: 22 }, { width: 15 }, { width: 14 },
+    ];
+
+    ws.mergeCells('B2:I2');
+    ws.getCell('B2').value = '메이트 용역비 지급내역서';
+    styleCell(ws.getCell('B2'), { size: 18, font: { bold: true }, alignment: { horizontal: 'center' }, border: false });
+    ws.getRow(2).height = 30;
+
+    ws.mergeCells('B3:I3');
+    ws.getCell('B3').value = opts.issuerName || '';
+    styleCell(ws.getCell('B3'), { size: 12, alignment: { horizontal: 'center' }, border: false, color: 'FF555555' });
+
+    const infoRow = 5;
+    ws.getCell(`B${infoRow}`).value = '지급월';
+    styleCell(ws.getCell(`B${infoRow}`), { size: 11, font: { bold: true }, alignment: { horizontal: 'center' }, fill: 'FFEDEBE3' });
+    styleCell(ws.getCell(`C${infoRow}`), { border: true, fill: 'FFEDEBE3' });
+    ws.mergeCells(`D${infoRow}:F${infoRow}`);
+    ws.getCell(`D${infoRow}`).value = fmtPayMonth(opts.issueDateISO);
+    styleCell(ws.getCell(`D${infoRow}`), { size: 12, font: { bold: true, color: { argb: 'FF1F4E99' } }, alignment: { horizontal: 'center' }, fill: 'FFFFF2CC' });
+    ws.getCell(`G${infoRow}`).value = '지급일';
+    styleCell(ws.getCell(`G${infoRow}`), { size: 11, font: { bold: true }, alignment: { horizontal: 'center' }, fill: 'FFEDEBE3' });
+    ws.mergeCells(`H${infoRow}:I${infoRow}`);
+    ws.getCell(`H${infoRow}`).value = fmtPayDate(opts.issueDateISO);
+    styleCell(ws.getCell(`H${infoRow}`), { size: 12, font: { bold: true, color: { argb: 'FF1F4E99' } }, alignment: { horizontal: 'center' }, fill: 'FFFFF2CC' });
+    ws.getRow(infoRow).height = 24;
+
+    const headerRow = 7;
+    const headers = ['연번', '성명', '구분', '주민등록번호', '은행/계좌번호', '용역내용', '지급총액(원)', '비고'];
+    headers.forEach((h, i) => {
+      const cell = ws.getCell(headerRow, i + 2);
+      cell.value = h;
+      styleCell(cell, { size: 10.5, font: { bold: true, color: { argb: 'FFFFFFFF' } }, fill: 'FF1F3864', alignment: { horizontal: 'center' } });
+    });
+
+    const mateNames = Array.from(data.byMate.keys());
+    const rowCount = Math.max(mateNames.length, 10); // 스크린샷처럼 최소 10행 확보(빈 행은 다음 달 추가 입력용)
+    const firstDataRow = headerRow + 1;
+
+    for (let i = 0; i < rowCount; i++) {
+      const row = firstDataRow + i;
+      const mate = mateNames[i];
+      ws.getCell(row, 2).value = i + 1;
+      styleCell(ws.getCell(row, 2), { size: 10.5, alignment: { horizontal: 'center' } });
+
+      if (mate) {
+        const sessions = data.byMate.get(mate);
+        const payoutRatio = getMateRatio(mate, opts);
+        const summary = summarizeMate(sessions, opts, payoutRatio);
+        const info = (opts.mateInfoByMate && opts.mateInfoByMate[mate]) || {};
+
+        const vals = [
+          mate,
+          info.category || '',
+          info.ssn || '',
+          info.bankAccount || '',
+          opts.programName ? `${opts.programName} 프로그램 진행` : '프로그램 진행',
+          summary.totalFee,
+          '',
+        ];
+        vals.forEach((v, ci) => {
+          const col = 3 + ci; // C=성명 ... I=비고
+          const cell = ws.getCell(row, col);
+          cell.value = v;
+          const isAmount = col === 8;
+          const isServiceContent = col === 7;
+          if (isAmount) cell.numFmt = '#,##0';
+          styleCell(cell, {
+            size: 10.5,
+            alignment: { horizontal: (col === 3 || isServiceContent) ? 'left' : 'center' },
+            fill: isServiceContent ? 'FFFFFFFF' : 'FFFFF8E1',
+            font: (col >= 3 && col <= 6) || isAmount ? { color: { argb: 'FF1F4E99' }, bold: isAmount } : {},
+          });
+        });
+      } else {
+        for (let col = 3; col <= 9; col++) {
+          styleCell(ws.getCell(row, col), { size: 10.5, fill: 'FFFFF8E1' });
+        }
+      }
+    }
+
+    const totalRow = firstDataRow + rowCount;
+    ws.mergeCells(`B${totalRow}:G${totalRow}`);
+    ws.getCell(`B${totalRow}`).value = '합계';
+    styleCell(ws.getCell(`B${totalRow}`), { size: 11, font: { bold: true }, alignment: { horizontal: 'center' }, fill: 'FFF0EEE6' });
+    const totalCell = ws.getCell(`H${totalRow}`);
+    totalCell.value = { formula: `SUM(H${firstDataRow}:H${totalRow - 1})`, result: null };
+    totalCell.numFmt = '#,##0';
+    styleCell(totalCell, { size: 11, font: { bold: true }, alignment: { horizontal: 'center' }, fill: 'FFE3F1E6' });
+    styleCell(ws.getCell(`I${totalRow}`), { fill: 'FFE3F1E6' });
+
+    return wb;
+  }
+
   return {
     findHeaderColumns,
     pickSourceSheet,
@@ -877,6 +1004,7 @@
     fmtDate,
     processRows,
     buildWorkbook,
+    buildPayrollWorkbook,
     safeSheetName,
     summarizeMate,
     computeSessionRow,
@@ -912,18 +1040,18 @@
   const DEFAULT_PAYOUT_RATIO = 0.61;
   const JSONP_TIMEOUT_MS = 8000;
 
-  let sheetRatios = null;        // { 메이트명: 0.8, ... } — 불러오기 성공 시 채워짐
+  let sheetMateData = null;      // { 메이트명: { ratio, category, ssn, bankAccount }, ... } — 불러오기 성공 시 채워짐
   let sheetRatiosState = 'loading'; // 'loading' | 'ok' | 'error'
   const ratioFetchPromise = fetchMateRatiosFromSheet();
 
   function normalizeHeader(s) {
-    return String(s || '').replace(/\s|\(|\)/g, '').trim();
+    return String(s || '').replace(/\s|\(|\)|\//g, '').trim();
   }
 
   function fetchMateRatiosFromSheet() {
     return new Promise((resolve) => {
       if (typeof document === 'undefined') {
-        sheetRatios = null; sheetRatiosState = 'error'; resolve(null); return;
+        sheetMateData = null; sheetRatiosState = 'error'; resolve(null); return;
       }
 
       const cbName = '__mateRatioCb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
@@ -935,7 +1063,7 @@
         clearTimeout(timer);
         delete window[cbName];
         if (script.parentNode) script.parentNode.removeChild(script);
-        sheetRatios = map;
+        sheetMateData = map;
         sheetRatiosState = map ? 'ok' : 'error';
         if (!map) console.error('메이트 명단 시트 불러오기 실패 (JSONP)');
         resolve(map);
@@ -946,18 +1074,27 @@
           const cols = (data.table.cols || []).map((c) => normalizeHeader(c.label));
           const nameIdx = cols.findIndex((h) => ['메이트이름', '메이트명', '메이트'].includes(h));
           const ratioIdx = cols.findIndex((h) => ['지급비율', '지급율', '비율'].includes(h));
+          const categoryIdx = cols.findIndex((h) => ['구분'].includes(h));
+          const ssnIdx = cols.findIndex((h) => ['주민등록번호', '주민번호'].includes(h));
+          const bankIdx = cols.findIndex((h) => ['은행계좌번호', '계좌번호', '은행계좌'].includes(h));
           if (nameIdx < 0 || ratioIdx < 0) throw new Error('헤더를 찾을 수 없음: ' + cols.join(','));
 
           const map = {};
           (data.table.rows || []).forEach((row) => {
             const cells = row.c || [];
-            const name = cells[nameIdx] && cells[nameIdx].v != null ? String(cells[nameIdx].v).trim() : '';
+            const cellStr = (idx) => (idx >= 0 && cells[idx] && cells[idx].v != null ? String(cells[idx].v).trim() : '');
+            const name = cellStr(nameIdx);
             const ratioCell = cells[ratioIdx];
             if (!name || !ratioCell || ratioCell.v == null) return;
             let v = Number(ratioCell.v);
             if (!Number.isFinite(v)) return;
             if (v > 1) v = v / 100; // "75" 처럼 %단위 숫자로 적혀 있으면 0.75로 변환
-            map[name] = v;
+            map[name] = {
+              ratio: v,
+              category: cellStr(categoryIdx),
+              ssn: cellStr(ssnIdx),
+              bankAccount: cellStr(bankIdx),
+            };
           });
           finish(map);
         } catch (err) {
@@ -1009,8 +1146,8 @@
   let currentMateNames = [];
 
   function renderMateRatioRow(mate) {
-    const known = sheetRatios && sheetRatios[mate] != null;
-    const pct = known ? (sheetRatios[mate] * 100) : (DEFAULT_PAYOUT_RATIO * 100);
+    const known = sheetMateData && sheetMateData[mate] && sheetMateData[mate].ratio != null;
+    const pct = known ? (sheetMateData[mate].ratio * 100) : (DEFAULT_PAYOUT_RATIO * 100);
     const row = document.createElement('div');
     row.className = 'mate-ratio-row';
     row.innerHTML = `
@@ -1151,6 +1288,17 @@
   }
 
   // ── 옵션 수집 ────────────────────────────────────────
+  function collectMateInfo() {
+    const map = {};
+    if (sheetMateData) {
+      Object.keys(sheetMateData).forEach((mate) => {
+        const d = sheetMateData[mate];
+        map[mate] = { category: d.category || '', ssn: d.ssn || '', bankAccount: d.bankAccount || '' };
+      });
+    }
+    return map;
+  }
+
   function collectOpts() {
     const isoDate = $('issueDate').value || new Date().toISOString().slice(0, 10);
     return {
@@ -1158,12 +1306,14 @@
       insurancePerPerson: Number($('insurance').value) || 0,
       defaultPayoutRatio: DEFAULT_PAYOUT_RATIO,
       payoutRatioByMate: collectMateRatios(),
+      mateInfoByMate: collectMateInfo(),
       yearGuess: Number($('yearGuess').value) || new Date().getFullYear(),
       includeNoShow: $('includeNoShow').checked,
       orgName: $('orgName').value.trim() || '민낯여성산악회',
       programName: $('programName').value.trim() || '메이트',
       titlePrefix: $('titlePrefix').value.trim() || '',
       issueDateKR: fmtIssueDateKR(isoDate),
+      issueDateISO: isoDate,
       issuerName: $('issuerName').value.trim() || '',
     };
   }
@@ -1412,6 +1562,44 @@
     } catch (err) {
       console.error(err);
       status.textContent = '이미지를 만드는 중 오류가 발생했어요.';
+      status.className = 'status-line err';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  });
+
+  // ── 세무대리인용 지급내역서(성명/구분/주민등록번호/은행계좌/지급총액) 다운로드 ──
+  $('downloadPayrollBtn').addEventListener('click', async () => {
+    if (!lastData || !lastOpts) return;
+    const btn = $('downloadPayrollBtn');
+    const original = btn.innerHTML;
+    const status = $('imageDownloadStatus');
+    btn.disabled = true;
+    btn.textContent = '지급내역서 생성 중…';
+    try {
+      const missing = Array.from(lastData.byMate.keys()).filter((mate) => {
+        const info = lastOpts.mateInfoByMate && lastOpts.mateInfoByMate[mate];
+        return !info || (!info.category && !info.ssn && !info.bankAccount);
+      });
+
+      const wb = SettleCore.buildPayrollWorkbook(ExcelJS, lastData, lastOpts);
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const prefix = lastOpts.titlePrefix ? lastOpts.titlePrefix.replace(/\s+/g, '') + '_' : '';
+      const dateStr = (lastOpts.issueDateISO || '').replace(/-/g, '');
+      downloadBlob(blob, `${prefix}세무대리인용_메이트_용역비_지급내역서_${dateStr}.xlsx`);
+
+      if (missing.length) {
+        status.textContent = `${missing.join(', ')} 님은 메이트 명단 시트에 구분/주민등록번호/은행계좌 정보가 없어 해당 칸이 비어 있어요. 시트에 채워 넣은 뒤 다시 다운로드하면 반영돼요.`;
+        status.className = 'status-line err';
+      } else {
+        status.textContent = '지급내역서를 내려받았어요.';
+        status.className = 'status-line ok';
+      }
+    } catch (err) {
+      console.error(err);
+      status.textContent = '지급내역서를 만드는 중 오류가 발생했어요.';
       status.className = 'status-line err';
     } finally {
       btn.disabled = false;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>메이트 별 정산 리스트</title>
+<title>1단계: 메이트 별 정산 리스트 재가공</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -265,9 +265,10 @@
     <svg class="ridge-mark" width="44" height="44" viewBox="0 0 44 44" fill="none">
       <path d="M2 32 L12 18 L18 26 L26 10 L36 28 L42 22" stroke="#35543F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     </svg>
-    <h1>메이트 별 정산 리스트</h1>
+    <h1>1단계: 메이트 별 정산 리스트 재가공</h1>
   </header>
   <p class="subtitle">네이버 정산 내역 엑셀 파일을, 메이트 별 정산 내역으로 재가공합니다</p>
+  <p class="subtitle"><b>'네이버 정산관리 &gt; 항목별 정산내역'</b> 메뉴에서 <b>'엑셀다운'</b> 한 파일을 업로드하세요.</p>
 
   <svg class="ridge-divider" viewBox="0 0 960 14" preserveAspectRatio="none">
     <path d="M0 12 L60 4 L120 12 L180 2 L240 12 L300 6 L360 12 L420 3 L480 12 L540 5 L600 12 L660 4 L720 12 L780 6 L840 12 L900 3 L960 12" stroke="#8A6D3B" stroke-width="1.4" fill="none"/>
@@ -276,7 +277,6 @@
   <!-- STEP 1: UPLOAD -->
   <div class="card">
     <h2><span class="step-num">1</span> 원본 엑셀 업로드</h2>
-    <p class="desc">정산기준금액(A), Npay 수수료(B), 매출연동 수수료 합계(C), 무이자할부 수수료(D) 열이 포함된 네이버페이 정산 파일(.xlsx)을 올려주세요.</p>
 
     <div id="dropzone" class="dropzone">
       <div class="dz-icon">
